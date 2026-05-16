@@ -27,3 +27,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# GCS sensitive files
+key.json
+cors.json
+google-cloud-sdk/

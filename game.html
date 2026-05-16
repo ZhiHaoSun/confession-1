@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>记忆迷宫 — 专属于你的解谜冒险</title>
+  <meta name="description" content="一场属于你们的记忆解谜之旅，在 2D 画面中寻找线索，解锁最深的告白。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0e27;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Noto Serif SC', serif;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16/9;
+      position: relative;
+    }
+    #game-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 12px;
+      box-shadow: 0 0 60px rgba(232, 168, 124, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script type="module" src="/src/game/GameBoot.js"></script>
+</body>
+</html>

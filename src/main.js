@@ -5,11 +5,18 @@ import { initLocale } from './i18n/i18n.js';
 import { WizardController } from './wizard/WizardController.js';
 import { ParticleBackground } from './wizard/components/ParticleBackground.js';
 
-// Initialize i18n before rendering
-initLocale();
-
 // Boot
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize locale
+  initLocale();
+
+  // Dynamically set document title based on locale
+  document.title = t('core.title');
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.content = t('core.description');
+  }
+
   const app = document.getElementById('app');
   
   // Ambient particle background

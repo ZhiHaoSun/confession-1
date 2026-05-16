@@ -1,9 +1,5 @@
-/**
- * ConfessionScene — The grand finale!
- * Displays love letter with typewriter effect, heart particle shower,
- * and optional confession video playback.
- */
 import Phaser from 'phaser';
+import { t } from '../../i18n/i18n.js';
 
 export class ConfessionScene extends Phaser.Scene {
   constructor() {
@@ -57,7 +53,7 @@ export class ConfessionScene extends Phaser.Scene {
     });
 
     // "All memories collected" message
-    const allCollectedText = this.add.text(cx, height * 0.12, '✨ 所有记忆碎片已收集完毕 ✨', {
+    const allCollectedText = this.add.text(cx, height * 0.12, t('game.allCollected'), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '14px',
       color: '#e8a87c',
@@ -111,7 +107,7 @@ export class ConfessionScene extends Phaser.Scene {
     video.style.cssText = 'width: 100%; height: 100%; object-fit: contain; background: #000;';
 
     const continueBtn = document.createElement('button');
-    continueBtn.textContent = '继续查看告白信';
+    continueBtn.textContent = t('confession.continue');
     continueBtn.style.cssText = `
       position: absolute;
       right: 18px;
@@ -138,7 +134,7 @@ export class ConfessionScene extends Phaser.Scene {
     parent.appendChild(overlay);
 
     video.play().catch(() => {
-      continueBtn.textContent = '播放视频 / 继续查看告白信';
+      continueBtn.textContent = t('confession.playOrContinue');
     });
   }
 
@@ -168,9 +164,9 @@ export class ConfessionScene extends Phaser.Scene {
   }
 
   showLoveLetter(letterText, cx, w, h, characters) {
-    const text = letterText || '谢谢你出现在我的生命中。';
-    const receiverName = characters?.receiver?.name || '你';
-    const creatorName = characters?.creator?.name || '我';
+    const text = letterText || t('confession.defaultLetter');
+    const receiverName = characters?.receiver?.name || t('generate.you');
+    const creatorName = characters?.creator?.name || t('generate.me');
 
     // Letter card background
     const cardW = Math.min(w * 0.85, 580);
@@ -204,7 +200,7 @@ export class ConfessionScene extends Phaser.Scene {
       ease: 'Power2',
     });
 
-    const headerText = this.add.text(cx, letterY - h * 0.19, `致 ${receiverName}`, {
+    const headerText = this.add.text(cx, letterY - h * 0.19, t('confession.dear', { name: receiverName }), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '18px',
       color: '#e8a87c',
@@ -237,7 +233,7 @@ export class ConfessionScene extends Phaser.Scene {
     const signatureDelay = 2200;
 
     this.time.delayedCall(signatureDelay, () => {
-      const signature = this.add.text(cx + cardW * 0.15, letterY + h * 0.2, `—— 永远的 ${creatorName} ❤️`, {
+      const signature = this.add.text(cx + cardW * 0.15, letterY + h * 0.2, t('confession.forever', { name: creatorName }), {
         fontFamily: '"Caveat", cursive',
         fontSize: '20px',
         color: '#e8a87c',
@@ -286,7 +282,7 @@ export class ConfessionScene extends Phaser.Scene {
     parent.style.position = 'relative';
 
     const panel = document.createElement('div');
-    panel.textContent = text || '谢谢你出现在我的生命中。';
+    panel.textContent = text || t('confession.defaultLetter');
     panel.style.cssText = `
       position: absolute;
       z-index: 12;

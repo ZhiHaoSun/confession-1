@@ -3,6 +3,7 @@
  * Supports trivia questions, password locks, and hidden object hints.
  */
 import Phaser from 'phaser';
+import { t } from '../../i18n/i18n.js';
 
 export class PuzzleScene extends Phaser.Scene {
   constructor() {
@@ -77,7 +78,7 @@ export class PuzzleScene extends Phaser.Scene {
 
     // Hint
     if (puzzle.hint) {
-      this.add.text(cx, cy - 15, `💡 提示: ${puzzle.hint}`, {
+      this.add.text(cx, cy - 15, t('game.hintPrefix') + puzzle.hint, {
         fontFamily: '"Inter", sans-serif',
         fontSize: '13px',
         color: '#e8a87c',
@@ -94,7 +95,7 @@ export class PuzzleScene extends Phaser.Scene {
 
     const htmlInput = document.createElement('input');
     htmlInput.type = 'text';
-    htmlInput.placeholder = '输入答案...';
+    htmlInput.placeholder = t('game.inputAnswer');
     htmlInput.style.cssText = `
       position: absolute;
       background: rgba(17, 22, 56, 0.95);
@@ -154,7 +155,7 @@ export class PuzzleScene extends Phaser.Scene {
     const submitBg = this.add.rectangle(cx, cy + 100, 160, 44, 0xe8a87c, 1)
       .setInteractive({ useHandCursor: true });
 
-    const submitText = this.add.text(cx, cy + 100, '确认答案', {
+    const submitText = this.add.text(cx, cy + 100, t('game.submitAnswer'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '16px',
       color: '#0a0e27',
@@ -403,7 +404,7 @@ export class PuzzleScene extends Phaser.Scene {
     }
 
     // Success text
-    const successText = this.add.text(width / 2, height / 2, '✨ 解锁成功！', {
+    const successText = this.add.text(width / 2, height / 2, t('game.unlocked'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '28px',
       color: '#f0c27f',
@@ -439,7 +440,7 @@ export class PuzzleScene extends Phaser.Scene {
     });
 
     // Error hint
-    const errorText = this.add.text(width / 2, height * 0.88, '再想想吧... 💭', {
+    const errorText = this.add.text(width / 2, height * 0.88, t('game.tryAgain'), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '14px',
       color: '#f48fb1',

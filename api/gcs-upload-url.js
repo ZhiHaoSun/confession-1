@@ -30,8 +30,22 @@ function sanitizeFileName(fileName) {
 }
 
 function getPrivateKey() {
-  const raw = process.env.GCS_PRIVATE_KEY || '';
-  return raw.replace(/\\n/g, '\n');
+  let raw = process.env.GCS_PRIVATE_KEY || '';
+  // Strip surrounding quotes
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    raw = raw.slice(1, -1);
+  }
+  // Convert literal \n sequences to real newlines
+  raw = raw.replace(/\\n/g, '\n');
+  // Strip PEM header/footer and all whitespace, then rebuild proper PEM
+  const base64 = raw
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '');
+  if (!base64) return '';
+  // Rebuild with proper 64-char line breaks
+  const lines = base64.match(/.{1,64}/g) || [];
+  return `-----BEGIN PRIVATE KEY-----\n${lines.join('\n')}\n-----END PRIVATE KEY-----\n`;
 }
 
 function toQuery(params) {
@@ -102,7 +116,7 @@ export default async function handler(req, res) {
       canonicalUri,
       canonicalQuery,
       `content-type:${contentType}\n` +
-        'host:storage.googleapis.com\n',
+      'host:storage.googleapis.com\n',
       'content-type;host',
       'UNSIGNED-PAYLOAD',
     ].join('\n');

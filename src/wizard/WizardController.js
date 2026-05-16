@@ -9,6 +9,7 @@ import { Step4ArtStyle } from './steps/Step4_ArtStyle.js';
 import { Step5Puzzles } from './steps/Step5_Puzzles.js';
 import { Step6Finale } from './steps/Step6_Finale.js';
 import { Step7Generate } from './steps/Step7_Generate.js';
+import { t, getLocale, setLocale } from '../i18n/i18n.js';
 
 const STORAGE_KEY = 'memorymaze_wizard_data';
 
@@ -102,7 +103,17 @@ export class WizardController {
         <span>MemoryMaze</span>
       </a>
       <div class="progress-container" id="progress-bar"></div>
+      <div class="lang-switcher" id="header-lang-switcher" title="${t('langSwitch.tooltip')}" style="position: absolute; right: var(--space-xl); top: 50%; transform: translateY(-50%); font-size: 0.9rem; padding: 6px 12px; cursor: pointer; color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; transition: all 0.3s ease;">
+        🌐 ${t('langSwitch.label')}
+      </div>
     `;
+
+    const langBtn = header.querySelector('#header-lang-switcher');
+    langBtn.addEventListener('click', () => {
+      const newLang = getLocale() === 'zh' ? 'en' : 'zh';
+      setLocale(newLang);
+      this.render(); // re-render current step
+    });
 
     const progressBar = header.querySelector('#progress-bar');
     const stepLabels = ['📝', '📸', '🎨', '🧩', '💌', '✨'];

@@ -3,6 +3,8 @@
  * Sends user-provided memory details (text + photos) to OpenAI's API
  * and returns structured game scene configurations.
  */
+import { getLocale } from '../i18n/i18n.js';
+
 export class AIService {
   constructor(apiKey) {
     this.apiKey = apiKey;
@@ -28,18 +30,21 @@ export class AIService {
 
   /**
    * Generate a complete scene config from rich memory data.
-   * @param {Object} memory - { title, description, location, people, dialogue, soundtrack, photos[] }
-   * @param {string} artStyle - watercolor | anime | isometric
-   * @param {Object} characters - { creator: {name}, receiver: {name} }
-   * @param {number} sceneIndex - 0-based scene index
-   * @param {number} totalScenes - total number of scenes
-   * @returns {Object} Enhanced scene configuration
    */
   async generateScene(memory, artStyle, characters, sceneIndex, totalScenes) {
-    const systemPrompt = `你是一个浪漫解谜游戏的创意总监。你需要根据用户提供的真实记忆细节，生成一个游戏关卡的完整配置。
+    const isEn = getLocale() === 'en';
+
+    let styleStr = '';
+    if (isEn) {
+      styleStr = artStyle === 'watercolor' ? 'Warm Watercolor Storybook' : artStyle === 'anime' ? 'Beautiful Anime (Makoto Shinkai)' : 'Retro Miniature Diorama';
+    } else {
+      styleStr = artStyle === 'watercolor' ? '温馨水彩绘本' : artStyle === 'anime' ? '唯美日系新海诚' : '复古微缩模型';
+    }
+
+    const systemPromptZh = `你是一个浪漫解谜游戏的创意总监。你需要根据用户提供的真实记忆细节，生成一个游戏关卡的完整配置。
 
 游戏类型：2D 浪漫解谜点击冒险
-艺术风格：${artStyle === 'watercolor' ? '温馨水彩绘本' : artStyle === 'anime' ? '唯美日系新海诚' : '复古微缩模型'}
+艺术风格：${styleStr}
 创作者：${characters.creator.name}
 接收者（玩家）：${characters.receiver.name}
 当前关卡：第 ${sceneIndex + 1} / ${totalScenes} 关
@@ -78,9 +83,51 @@ export class AIService {
 6. 记忆碎片文字要让玩家（接收者）感动
 7. 必须严格返回有效的 JSON 格式`;
 
-    const userContent = this._buildMemoryPrompt(memory);
+    const systemPromptEn = `You are the creative director of a romantic puzzle game. You need to generate a complete level configuration based on real memories provided by the user.
+
+Game Type: 2D Romantic Puzzle Point & Click
+Art Style: ${styleStr}
+Creator: ${characters.creator.name}
+Receiver (Player): ${characters.receiver.name}
+Current Level: ${sceneIndex + 1} / ${totalScenes}
+
+Please return a JSON object with the following fields:
+{
+  "title": "Level Title (Poetic, max 4 words)",
+  "narrative": "Scene narrative text (30-60 words, 2nd person 'you', gentle and affectionate, guiding the player to recall this memory)",
+  "scene_description": "Visual scene description (for AI image gen, 30-50 words)",
+  "mood": "Scene mood (e.g. Cozy, Romantic, Nostalgic, Sweet)",
+  "color_palette": ["Main hex", "Secondary hex", "Accent hex"],
+  "interactives": [
+    {
+      "title": "Hotspot name (e.g. Window Seat, The Coffee, Old Ticket)",
+      "icon": "A suitable emoji",
+      "position": { "x": 0.2-0.8 float, "y": 0.25-0.75 float },
+      "memory_text": "Text shown when clicked (20-40 words, must relate to this specific object)",
+      "reward_text": "Unlock hint (5-15 words)"
+    }
+  ],
+  "puzzle": {
+    "type": "trivia or password or hidden (choose best fit)",
+    "question": "Puzzle question (based on memory details, player must recall to answer)",
+    "answer": "Answer (short, 1-3 words or 4-6 digits)",
+    "hint": "Hint (guiding but not direct)"
+  },
+  "memory_shard_text": "Memory shard text shown after unlocking (15-30 words, emotional and touching)"
+}
+
+Rules:
+1. Generate 3-5 interactives, each representing a clickable object/location.
+2. memory_text must expand upon the user's uploaded memories, photos, locations, people, etc.
+3. If there is dialogue, prioritize 'trivia' puzzle.
+4. If there is a date, prioritize 'password' lock (using digits).
+5. Tone must be gentle, poetic, and emotional.
+6. The memory_shard_text must move the player (receiver).
+7. Must strictly return valid JSON format.`;
+
+    const userContent = this._buildMemoryPrompt(memory, isEn);
     const messages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: isEn ? systemPromptEn : systemPromptZh },
       { role: 'user', content: userContent },
     ];
 
@@ -91,7 +138,9 @@ export class AIService {
    * Generate the overall game narrative arc and enhanced confession letter.
    */
   async generateNarrative(allMemories, characters, existingLetter) {
-    const systemPrompt = `你是一个浪漫文学创作者。根据用户提供的所有记忆场景概要，生成一封深情的告白信。
+    const isEn = getLocale() === 'en';
+
+    const systemPromptZh = `你是一个浪漫文学创作者。根据用户提供的所有记忆场景概要，生成一封深情的告白信。
 
 创作者：${characters.creator.name}
 接收者：${characters.receiver.name}
@@ -107,32 +156,61 @@ export class AIService {
 2. 文风温柔内敛，有诗意，不要太夸张
 3. 如果用户已提供告白信草稿，在其基础上润色增强`;
 
+    const systemPromptEn = `You are a romantic writer. Generate a deeply affectionate love letter based on all the memory scenes provided by the user.
+
+Creator: ${characters.creator.name}
+Receiver: ${characters.receiver.name}
+
+Please return a JSON object:
+{
+  "love_letter": "Full love letter (150-300 words, starting with 'Dear ${characters.receiver.name},' and ending with 'Forever yours, ${characters.creator.name}'. Deeply emotional but natural, incorporating real memory details)",
+  "opening_text": "Game opening text (15-30 words, shown on main menu)"
+}
+
+Rules:
+1. Incorporate real memory details provided by the user to make the letter authentic.
+2. Tone should be gentle, poetic, and not overly dramatic.
+3. If the user provided a draft, enhance and polish it.`;
+
     const memorySummaries = allMemories.map((m, i) =>
-      `记忆${i + 1}：${m.title || '未命名'} | ${m.location || ''} | ${m.description || ''} | ${m.dialogue || ''}`
+      isEn
+        ? `Memory ${i + 1}: ${m.title || 'Untitled'} | ${m.location || ''} | ${m.description || ''} | ${m.dialogue || ''}`
+        : `记忆${i + 1}：${m.title || '未命名'} | ${m.location || ''} | ${m.description || ''} | ${m.dialogue || ''}`
     ).join('\n');
 
-    const userMsg = `记忆场景概要：\n${memorySummaries}\n\n${existingLetter ? `用户告白信草稿：\n${existingLetter}` : '请原创一封告白信。'}`;
+    const userMsgZh = `记忆场景概要：\n${memorySummaries}\n\n${existingLetter ? `用户告白信草稿：\n${existingLetter}` : '请原创一封告白信。'}`;
+    const userMsgEn = `Memory scenes overview:\n${memorySummaries}\n\n${existingLetter ? `User's draft love letter:\n${existingLetter}` : 'Please write an original love letter.'}`;
 
     return await this._callAPI([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMsg },
+      { role: 'system', content: isEn ? systemPromptEn : systemPromptZh },
+      { role: 'user', content: isEn ? userMsgEn : userMsgZh },
     ], 800);
   }
 
   /**
    * Build the user prompt content including images if available.
    */
-  _buildMemoryPrompt(memory) {
+  _buildMemoryPrompt(memory, isEn = false) {
     const textParts = [];
-    if (memory.title) textParts.push(`场景名称：${memory.title}`);
-    if (memory.location) textParts.push(`地点：${memory.location}`);
-    if (memory.date) textParts.push(`日期：${memory.date}`);
-    if (memory.people) textParts.push(`在场的人：${memory.people}`);
-    if (memory.description) textParts.push(`情感描述：${memory.description}`);
-    if (memory.dialogue) textParts.push(`印象深刻的对话：${memory.dialogue}`);
-    if (memory.soundtrack) textParts.push(`当时的歌曲：${memory.soundtrack}`);
+    if (isEn) {
+      if (memory.title) textParts.push(`Scene name: ${memory.title}`);
+      if (memory.location) textParts.push(`Location: ${memory.location}`);
+      if (memory.date) textParts.push(`Date: ${memory.date}`);
+      if (memory.people) textParts.push(`People present: ${memory.people}`);
+      if (memory.description) textParts.push(`Emotional description: ${memory.description}`);
+      if (memory.dialogue) textParts.push(`Memorable dialogue: ${memory.dialogue}`);
+      if (memory.soundtrack) textParts.push(`Song playing: ${memory.soundtrack}`);
+    } else {
+      if (memory.title) textParts.push(`场景名称：${memory.title}`);
+      if (memory.location) textParts.push(`地点：${memory.location}`);
+      if (memory.date) textParts.push(`日期：${memory.date}`);
+      if (memory.people) textParts.push(`在场的人：${memory.people}`);
+      if (memory.description) textParts.push(`情感描述：${memory.description}`);
+      if (memory.dialogue) textParts.push(`印象深刻的对话：${memory.dialogue}`);
+      if (memory.soundtrack) textParts.push(`当时的歌曲：${memory.soundtrack}`);
+    }
 
-    const text = textParts.join('\n') || '一段珍贵的记忆';
+    const text = textParts.join('\n') || (isEn ? 'A precious memory' : '一段珍贵的记忆');
 
     // If there are photos, use multimodal content format. Photos may be
     // Google Cloud public URLs or legacy data URLs.
@@ -144,7 +222,7 @@ export class AIService {
     if (validPhotos.length > 0) {
       // Build multimodal content array
       const content = [
-        { type: 'text', text: `请根据以下记忆信息和照片，生成游戏关卡配置：\n\n${text}` },
+        { type: 'text', text: isEn ? `Please generate level config based on memory details and photos:\n\n${text}` : `请根据以下记忆信息和照片，生成游戏关卡配置：\n\n${text}` },
       ];
 
       validPhotos.forEach((photoUrl, idx) => {
@@ -160,7 +238,7 @@ export class AIService {
       return content;
     }
 
-    return `请根据以下记忆信息生成游戏关卡配置：\n\n${text}`;
+    return isEn ? `Please generate level config based on memory details:\n\n${text}` : `请根据以下记忆信息生成游戏关卡配置：\n\n${text}`;
   }
 
   /**
@@ -180,8 +258,7 @@ export class AIService {
           body: JSON.stringify({
             model: this.model,
             messages,
-            max_tokens: maxTokens,
-            temperature: 0.8,
+            max_completion_tokens: maxTokens,
             response_format: { type: 'json_object' },
           }),
         });

@@ -3,6 +3,7 @@
  * Rich memory scene input: multi-photo gallery, location, people, dialogue, soundtrack.
  */
 import { MediaUploader } from '../../utils/MediaUploader.js';
+import { t } from '../../i18n/i18n.js';
 
 export class Step3Memories {
   constructor(wizard) {
@@ -32,20 +33,20 @@ export class Step3Memories {
       <div class="step-container">
         <div class="step-content">
           <div class="step-emoji">📸</div>
-          <h2 class="step-title">记忆碎片</h2>
-          <p class="step-subtitle">详细描述你们的珍贵瞬间——细节越丰富，AI 生成的游戏场景越动人</p>
+          <h2 class="step-title">${t('memories.title')}</h2>
+          <p class="step-subtitle">${t('memories.subtitle')}</p>
 
           ${this.renderGlobalMusicUpload()}
 
           <div class="memory-cards" id="memory-cards"></div>
 
           <button class="add-memory-btn mt-lg" id="btn-add-memory" style="display: ${this.wizard.data.memories.length >= 5 ? 'none' : 'flex'}">
-            ＋ 添加新的记忆场景
+            ${t('memories.addMemory')}
           </button>
 
           <div class="step-nav">
-            <button class="btn btn-ghost" id="btn-prev">← 上一步</button>
-            <button class="btn btn-primary" id="btn-next">下一步 →</button>
+            <button class="btn btn-ghost" id="btn-prev">${t('nav.prev')}</button>
+            <button class="btn btn-primary" id="btn-next">${t('nav.next')}</button>
           </div>
         </div>
       </div>
@@ -74,7 +75,7 @@ export class Step3Memories {
       const memories = this.wizard.data.memories;
       const hasValidMemory = memories.some(m => m.title || (m.photos && m.photos.length > 0) || m.description);
       if (memories.length === 0 || !hasValidMemory) {
-        this.showValidation('请至少填写一个场景的名称或描述');
+        this.showValidation(t('memories.validationMemory'));
         return;
       }
       this.wizard.nextStep();
@@ -99,23 +100,23 @@ export class Step3Memories {
     const d = this.wizard.data;
     return `
       <div class="glass-card mb-xl">
-        <h3 style="font-size: 1.1rem; margin-bottom: var(--space-md);">🎧 全局场景音乐</h3>
+        <h3 style="font-size: 1.1rem; margin-bottom: var(--space-md);">${t('memories.globalMusicTitle')}</h3>
         <p style="font-size: 0.9rem; margin-bottom: var(--space-lg);">
-          上传一首音乐，生成后的每个记忆场景都会循环播放这首歌。
+          ${t('memories.globalMusicDesc')}
         </p>
         <div class="form-group" style="margin-bottom: var(--space-md);">
-          <label class="form-label">音乐名称 <span class="form-hint">（可选）</span></label>
-          <input class="form-input" id="global-music-title" placeholder="如：我们的主题曲"
+          <label class="form-label">${t('memories.musicNameLabel')} <span class="form-hint">${t('memories.musicNameHint')}</span></label>
+          <input class="form-input" id="global-music-title" placeholder="${t('memories.musicNamePlaceholder')}"
                  value="${d.globalSceneMusicTitle || ''}" />
         </div>
         <div class="audio-upload-row ${d.globalSceneMusicUrl ? 'has-audio' : ''}" id="global-audio-upload">
           ${d.globalSceneMusicUrl ? `
             <audio src="${d.globalSceneMusicUrl}" controls></audio>
-            <span class="audio-file-name">${d.globalSceneMusicName || '已上传场景音乐'}</span>
-            <button class="audio-remove-btn" id="global-audio-remove" type="button">移除</button>
+            <span class="audio-file-name">${d.globalSceneMusicName || t('memories.musicUploaded')}</span>
+            <button class="audio-remove-btn" id="global-audio-remove" type="button">${t('memories.musicRemove')}</button>
           ` : `
             <span class="audio-upload-icon">＋</span>
-            <span>上传所有场景共用的音乐</span>
+            <span>${t('memories.musicUploadBtn')}</span>
           `}
           <input type="file" accept="audio/*" id="global-audio-file" />
         </div>
@@ -142,18 +143,18 @@ export class Step3Memories {
           <div style="display: flex; align-items: center; gap: var(--space-md);">
             <div class="memory-card-number">${index + 1}</div>
             <input class="form-input" style="max-width: 280px; padding: var(--space-sm) var(--space-md);"
-                   placeholder="场景名称（如：初遇咖啡厅）"
+                   placeholder="${t('memories.sceneNamePlaceholder')}"
                    value="${memory.title || ''}"
                    data-index="${index}" data-field="title" />
           </div>
           ${this.wizard.data.memories.length > 1 ?
-            `<button class="memory-card-remove" data-remove="${index}" title="删除此场景">✕</button>` : ''}
+            `<button class="memory-card-remove" data-remove="${index}" title="${t('memories.deleteScene')}">✕</button>` : ''}
         </div>
 
         <div class="memory-card-body memory-card-body--enhanced">
           <!-- Photo Gallery -->
           <div class="photo-gallery-section">
-            <label class="form-label">📷 照片（最多 3 张，AI 将分析照片内容）</label>
+            <label class="form-label">${t('memories.photoLabel')}</label>
             <div class="photo-gallery" id="photo-gallery-${index}">
               ${photosHtml}
             </div>
@@ -162,22 +163,22 @@ export class Step3Memories {
           <!-- Core Fields -->
           <div class="memory-fields-grid">
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label">📅 日期</label>
+              <label class="form-label">${t('memories.dateLabel')}</label>
               <input class="form-input" type="date" value="${memory.date || ''}"
                      data-index="${index}" data-field="date" />
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label">📍 地点</label>
-              <input class="form-input" placeholder="如：星巴克 · 大学城店"
+              <label class="form-label">${t('memories.locationLabel')}</label>
+              <input class="form-input" placeholder="${t('memories.locationPlaceholder')}"
                      value="${memory.location || ''}"
                      data-index="${index}" data-field="location" />
             </div>
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">💭 情感描述 <span class="form-hint">（越详细，AI 生成效果越好）</span></label>
+            <label class="form-label">${t('memories.descriptionLabel')} <span class="form-hint">${t('memories.descriptionHint')}</span></label>
             <textarea class="form-input form-textarea"
-                      placeholder="写下这段记忆中你最深刻的感受...&#10;&#10;例如：那天下着小雨，你撑着伞等在图书馆门口，笑着说「我猜你一定忘了带伞」..."
+                      placeholder="${t('memories.descriptionPlaceholder')}"
                       style="height: 120px;"
                       data-index="${index}" data-field="description">${memory.description || ''}</textarea>
           </div>
@@ -185,26 +186,26 @@ export class Step3Memories {
           <!-- Expandable Details -->
           <details class="memory-details-section" ${detailsExpanded ? 'open' : ''}>
             <summary class="memory-details-toggle">
-              <span>✨ 更多细节</span>
-              <span class="memory-details-hint">（添加对话、人物、音乐可让 AI 生成更生动的场景）</span>
+              <span>${t('memories.moreDetails')}</span>
+              <span class="memory-details-hint">${t('memories.moreDetailsHint')}</span>
             </summary>
             <div class="memory-details-body">
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">👥 在场的人</label>
-                <input class="form-input" placeholder="如：我、她、她的闺蜜小张"
+                <label class="form-label">${t('memories.peopleLabel')}</label>
+                <input class="form-input" placeholder="${t('memories.peoplePlaceholder')}"
                        value="${memory.people || ''}"
                        data-index="${index}" data-field="people" />
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">💬 印象深刻的对话</label>
+                <label class="form-label">${t('memories.dialogueLabel')}</label>
                 <textarea class="form-input form-textarea"
-                          placeholder="如：&#10;她：「你怎么又迟到了？」&#10;我：「因为在路上给你买了这个。」"
+                          placeholder="${t('memories.dialoguePlaceholder')}"
                           style="height: 90px;"
                           data-index="${index}" data-field="dialogue">${memory.dialogue || ''}</textarea>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">🎵 当时听的歌 <span class="form-hint">（只用于 AI 理解场景，不上传文件）</span></label>
-                <input class="form-input" placeholder="如：周杰伦 - 晴天"
+                <label class="form-label">${t('memories.soundtrackLabel')} <span class="form-hint">${t('memories.soundtrackHint')}</span></label>
+                <input class="form-input" placeholder="${t('memories.soundtrackPlaceholder')}"
                        value="${memory.soundtrack || ''}"
                        data-index="${index}" data-field="soundtrack" />
               </div>
@@ -226,8 +227,8 @@ export class Step3Memories {
     photos.forEach((photoUrl, photoIdx) => {
       html += `
         <div class="photo-gallery-item has-image">
-          <img src="${photoUrl}" alt="记忆照片 ${photoIdx + 1}" />
-          <button class="photo-gallery-remove" data-mem="${memoryIndex}" data-photo="${photoIdx}" title="移除照片">✕</button>
+          <img src="${photoUrl}" alt="${t('memories.photoAlt')} ${photoIdx + 1}" />
+          <button class="photo-gallery-remove" data-mem="${memoryIndex}" data-photo="${photoIdx}" title="${t('memories.removePhoto')}">✕</button>
         </div>
       `;
     });
@@ -237,7 +238,7 @@ export class Step3Memories {
       html += `
         <div class="photo-gallery-item photo-gallery-add" data-upload="${memoryIndex}">
           <span class="photo-upload-icon">📷</span>
-          <span class="photo-upload-text">添加照片</span>
+          <span class="photo-upload-text">${t('memories.addPhoto')}</span>
           <input type="file" accept="image/*" data-file-mem="${memoryIndex}" />
         </div>
       `;
@@ -274,7 +275,7 @@ export class Step3Memories {
         const file = e.target.files[0];
         if (file) {
           try {
-            this.showValidation('正在上传照片到 Google Cloud...');
+            this.showValidation(t('upload.photoUploading'));
             const imageFile = await MediaUploader.imageFileToUploadBlob(file);
             const upload = await MediaUploader.uploadFile(imageFile, { folder: 'memorymaze/images' });
             if (!this.wizard.data.memories[memIdx].photos) {
@@ -284,7 +285,7 @@ export class Step3Memories {
             this.wizard.saveData();
             this.renderMemoryCards();
           } catch (err) {
-            this.showValidation(err.message || '照片上传失败，请检查 Google Cloud 配置');
+            this.showValidation(err.message || t('upload.photoFailed'));
           }
         }
       });
@@ -336,12 +337,12 @@ export class Step3Memories {
       if (!file) return;
 
       if (file.size > 8 * 1024 * 1024) {
-        this.showValidation('全局场景音乐建议控制在 8MB 内，避免生成链接过大');
+        this.showValidation(t('memories.musicSizeWarning'));
         return;
       }
 
       try {
-        this.showValidation('正在上传全局音乐到 Google Cloud...');
+        this.showValidation(t('upload.musicUploading'));
         const upload = await MediaUploader.uploadFile(file, { folder: 'memorymaze/audio' });
         this.wizard.data.globalSceneMusicUrl = upload.url;
         this.wizard.data.globalSceneMusicName = file.name;
@@ -351,7 +352,7 @@ export class Step3Memories {
         this.wizard.saveData();
         this.wizard.render();
       } catch (err) {
-        this.showValidation(err.message || '音乐上传失败，请检查 Google Cloud 配置');
+        this.showValidation(err.message || t('upload.musicFailed'));
       }
     });
 

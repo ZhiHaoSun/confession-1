@@ -1,8 +1,5 @@
-/**
- * LevelScene — Core gameplay scene with interactive exploration.
- * Dynamically built from config.json level data.
- */
 import Phaser from 'phaser';
+import { t } from '../../i18n/i18n.js';
 
 export class LevelScene extends Phaser.Scene {
   constructor() {
@@ -69,7 +66,7 @@ export class LevelScene extends Phaser.Scene {
     this.sceneAudio = audio;
 
     audio.play().catch(() => {
-      this.showMusicPrompt(music.title || '场景音乐', w, h);
+      this.showMusicPrompt(music.title || t('memories.musicUploaded'), w, h);
     });
   }
 
@@ -79,7 +76,7 @@ export class LevelScene extends Phaser.Scene {
     const bg = this.add.rectangle(w - 96, h - 34, 160, 40, 0x0a0e27, 0.78)
       .setStrokeStyle(1, 0xe8a87c, 0.35)
       .setInteractive({ useHandCursor: true });
-    const label = this.add.text(w - 96, h - 34, `♪ 播放 ${title}`, {
+    const label = this.add.text(w - 96, h - 34, t('game.playMusic', { title: title }), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '12px',
       color: '#e8a87c',
@@ -372,7 +369,7 @@ export class LevelScene extends Phaser.Scene {
     // Dark overlay
     const overlay = this.add.rectangle(w / 2, h / 2, w, h, 0x0a0e27, 0.7);
     
-    const chapterText = this.add.text(w / 2, h / 2 - 30, `第 ${level.id} 章`, {
+    const chapterText = this.add.text(w / 2, h / 2 - 30, t('game.chapter', { n: level.id }), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '14px',
       color: '#e8a87c',
@@ -445,7 +442,7 @@ export class LevelScene extends Phaser.Scene {
       });
 
       // Hint label
-      const hintText = this.add.text(x, y + 35, '点击探索', {
+      const hintText = this.add.text(x, y + 35, t('game.explore'), {
         fontFamily: '"Inter", sans-serif',
         fontSize: '11px',
         color: '#e8a87c',
@@ -522,12 +519,12 @@ export class LevelScene extends Phaser.Scene {
     if (!refs) return;
 
     refs.icon.setAlpha(0.35).disableInteractive();
-    refs.hintText.setText('已收集').setAlpha(0.75);
+    refs.hintText.setText(t('game.collected')).setAlpha(0.75);
     refs.glow.setAlpha(0.1);
 
     if (this.shardTextObj) {
       const total = Math.max(1, this.hotspotRefs.length);
-      this.shardTextObj.setText(`💎 本章碎片 ${this.viewedInteractives.size}/${total}`);
+      this.shardTextObj.setText(t('game.shards', { current: this.viewedInteractives.size, total: total }));
     }
   }
 
@@ -538,7 +535,7 @@ export class LevelScene extends Phaser.Scene {
     const panel = this.add.rectangle(width / 2, height - 54, 300, 48, 0x0a0e27, 0.82)
       .setStrokeStyle(1, 0xe8a87c, 0.35)
       .setInteractive({ useHandCursor: true });
-    const label = this.add.text(width / 2, height - 54, '✨ 本章记忆已收集，继续下一章', {
+    const label = this.add.text(width / 2, height - 54, t('game.levelComplete'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '15px',
       color: '#e8a87c',
@@ -576,7 +573,7 @@ export class LevelScene extends Phaser.Scene {
 
     // Memory shards
     const totalHotspots = Math.max(1, (level.interactives || []).length);
-    const shardText = `💎 本章碎片 0/${totalHotspots}`;
+    const shardText = t('game.shards', { current: 0, total: totalHotspots });
     this.shardTextObj = this.add.text(w - 16, 12, shardText, {
       fontFamily: '"Inter", sans-serif',
       fontSize: '13px',

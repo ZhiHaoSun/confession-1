@@ -2,6 +2,8 @@
  * Step 2 — Core Data
  * Input her name, birthday, anniversary, and puzzle answer keys.
  */
+import { t } from '../../i18n/i18n.js';
+
 export class Step2CoreData {
   constructor(wizard) {
     this.wizard = wizard;
@@ -13,36 +15,36 @@ export class Step2CoreData {
       <div class="step-container">
         <div class="step-content">
           <div class="step-emoji">📝</div>
-          <h2 class="step-title">基础信息</h2>
-          <p class="step-subtitle">这些信息将成为游戏中的解谜线索与密码</p>
+          <h2 class="step-title">${t('core.title')}</h2>
+          <p class="step-subtitle">${t('core.subtitle')}</p>
 
           <div class="glass-card">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">你的名字</label>
-                <input class="form-input" id="myName" type="text" placeholder="例如：Bob" value="${d.myName || ''}" />
+                <label class="form-label">${t('core.myName')}</label>
+                <input class="form-input" id="myName" type="text" placeholder="${t('core.myNamePlaceholder')}" value="${d.myName || ''}" />
               </div>
               <div class="form-group">
-                <label class="form-label">她的名字 ❤️</label>
-                <input class="form-input" id="herName" type="text" placeholder="例如：Alice" value="${d.herName || ''}" />
+                <label class="form-label">${t('core.herName')}</label>
+                <input class="form-input" id="herName" type="text" placeholder="${t('core.herNamePlaceholder')}" value="${d.herName || ''}" />
               </div>
               <div class="form-group">
-                <label class="form-label">她的生日 🎂</label>
+                <label class="form-label">${t('core.herBirthday')}</label>
                 <input class="form-input" id="herBirthday" type="date" value="${d.herBirthday || ''}" />
               </div>
               <div class="form-group">
-                <label class="form-label">你们的纪念日 💕</label>
+                <label class="form-label">${t('core.anniversary')}</label>
                 <input class="form-input" id="anniversary" type="date" value="${d.anniversary || ''}" />
               </div>
               <div class="form-group form-group-full">
-                <label class="form-label">你对她的专属昵称 💫</label>
-                <input class="form-input" id="nickname" type="text" placeholder="例如：小兔子、宝贝..." value="${d.nickname || ''}" />
+                <label class="form-label">${t('core.nickname')}</label>
+                <input class="form-input" id="nickname" type="text" placeholder="${t('core.nicknamePlaceholder')}" value="${d.nickname || ''}" />
               </div>
           </div>
 
           <div class="step-nav">
-            <button class="btn btn-ghost" id="btn-prev">← 上一步</button>
-            <button class="btn btn-primary" id="btn-next">下一步 →</button>
+            <button class="btn btn-ghost" id="btn-prev">${t('nav.prev')}</button>
+            <button class="btn btn-primary" id="btn-next">${t('nav.next')}</button>
           </div>
         </div>
       </div>
@@ -62,7 +64,7 @@ export class Step2CoreData {
     container.querySelector('#btn-next').addEventListener('click', () => {
       // Validate
       if (!this.wizard.data.myName || !this.wizard.data.herName) {
-        this.showValidation('请至少填写你和她的名字');
+        this.showValidation(t('core.validationNames'));
         return;
       }
       this.wizard.nextStep();

@@ -2,6 +2,8 @@
  * Step 5 — Puzzle Configuration
  * Set puzzle type and answers for each memory scene.
  */
+import { t } from '../../i18n/i18n.js';
+
 export class Step5Puzzles {
   constructor(wizard) {
     this.wizard = wizard;
@@ -25,14 +27,14 @@ export class Step5Puzzles {
       <div class="step-container">
         <div class="step-content">
           <div class="step-emoji">🧩</div>
-          <h2 class="step-title">解谜关卡设计</h2>
-          <p class="step-subtitle">为每个记忆场景设置解谜机关，利用你们的共同记忆作为通关钥匙</p>
+          <h2 class="step-title">${t('puzzles.title')}</h2>
+          <p class="step-subtitle">${t('puzzles.subtitle')}</p>
 
           <div class="puzzle-list" id="puzzle-list"></div>
 
           <div class="step-nav">
-            <button class="btn btn-ghost" id="btn-prev">← 上一步</button>
-            <button class="btn btn-primary" id="btn-next">下一步 →</button>
+            <button class="btn btn-ghost" id="btn-prev">${t('nav.prev')}</button>
+            <button class="btn btn-primary" id="btn-next">${t('nav.next')}</button>
           </div>
         </div>
       </div>
@@ -65,24 +67,24 @@ export class Step5Puzzles {
         <div style="display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-lg);">
           <div class="memory-card-number">${index + 1}</div>
           <div>
-            <div style="font-weight: 600; color: var(--text-primary);">${memory.title || `场景 ${index + 1}`}</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">设置通关机关</div>
+            <div style="font-weight: 600; color: var(--text-primary);">${memory.title || `${t('puzzles.sceneDefault')} ${index + 1}`}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">${t('puzzles.setupHint')}</div>
           </div>
         </div>
 
-        <label class="form-label">选择机关类型</label>
+        <label class="form-label">${t('puzzles.selectType')}</label>
         <div class="puzzle-type-selector">
           <button class="puzzle-type-btn ${puzzle.type === 'trivia' ? 'active' : ''}" data-idx="${index}" data-type="trivia">
             <span class="puzzle-type-icon">❓</span>
-            记忆问答
+            ${t('puzzles.trivia')}
           </button>
           <button class="puzzle-type-btn ${puzzle.type === 'password' ? 'active' : ''}" data-idx="${index}" data-type="password">
             <span class="puzzle-type-icon">🔐</span>
-            密码锁
+            ${t('puzzles.password')}
           </button>
           <button class="puzzle-type-btn ${puzzle.type === 'hidden' ? 'active' : ''}" data-idx="${index}" data-type="hidden">
             <span class="puzzle-type-icon">🔍</span>
-            隐藏物品
+            ${t('puzzles.hidden')}
           </button>
         </div>
 
@@ -121,54 +123,54 @@ export class Step5Puzzles {
 
   renderPuzzleConfig(puzzle, index) {
     const d = this.wizard.data;
-    const birthdayHint = d.herBirthday ? new Date(d.herBirthday).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' }) : '她的生日';
-    const anniversaryHint = d.anniversary ? new Date(d.anniversary).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' }) : '纪念日';
+    const birthdayHint = d.herBirthday ? new Date(d.herBirthday).toLocaleDateString(t('langSwitch.label') === 'EN' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric' }) : t('puzzles.herBirthday');
+    const anniversaryHint = d.anniversary ? new Date(d.anniversary).toLocaleDateString(t('langSwitch.label') === 'EN' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric' }) : t('puzzles.anniversary');
 
     switch (puzzle.type) {
       case 'trivia':
         return `
           <div class="form-group mt-md">
-            <label class="form-label">❓ 问题</label>
-            <input class="form-input" placeholder="例如：你还记得借给我的第一本书吗？" 
+            <label class="form-label">${t('puzzles.triviaQuestion')}</label>
+            <input class="form-input" placeholder="${t('puzzles.triviaQuestionPlaceholder')}" 
                    value="${puzzle.question || ''}" data-cidx="${index}" data-cfield="question" />
           </div>
           <div class="form-group">
-            <label class="form-label">✅ 答案</label>
-            <input class="form-input" placeholder="例如：小王子" 
+            <label class="form-label">${t('puzzles.triviaAnswer')}</label>
+            <input class="form-input" placeholder="${t('puzzles.triviaAnswerPlaceholder')}" 
                    value="${puzzle.answer || ''}" data-cidx="${index}" data-cfield="answer" />
           </div>
           <div class="form-group">
-            <label class="form-label">💡 提示（可选）</label>
-            <input class="form-input" placeholder="例如：法国作家写的童话..." 
+            <label class="form-label">${t('puzzles.triviaHint')}</label>
+            <input class="form-input" placeholder="${t('puzzles.triviaHintPlaceholder')}" 
                    value="${puzzle.hint || ''}" data-cidx="${index}" data-cfield="hint" />
           </div>
         `;
       case 'password':
         return `
           <div class="form-group mt-md">
-            <label class="form-label">🔢 密码（4-6位数字）</label>
-            <input class="form-input" type="text" placeholder="例如：0520（${anniversaryHint}）" maxlength="6"
+            <label class="form-label">${t('puzzles.passwordLabel')}</label>
+            <input class="form-input" type="text" placeholder="${t('puzzles.passwordPlaceholder')}（${anniversaryHint}）" maxlength="6"
                    value="${puzzle.answer || ''}" data-cidx="${index}" data-cfield="answer" />
             <div style="margin-top: var(--space-sm); font-size: 0.8rem; color: var(--text-muted);">
-              💡 建议使用有意义的日期：${birthdayHint}、${anniversaryHint}等
+              ${t('puzzles.passwordSuggestion')}${birthdayHint}、${anniversaryHint}
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">📜 密码提示文字</label>
-            <input class="form-input" placeholder="例如：我们在一起的那个特别日子..." 
+            <label class="form-label">${t('puzzles.passwordHintLabel')}</label>
+            <input class="form-input" placeholder="${t('puzzles.passwordHintPlaceholder')}" 
                    value="${puzzle.hint || ''}" data-cidx="${index}" data-cfield="hint" />
           </div>
         `;
       case 'hidden':
         return `
           <div class="form-group mt-md">
-            <label class="form-label">🔍 隐藏物品名称</label>
-            <input class="form-input" placeholder="例如：发光的日记本、闪烁的星星..." 
+            <label class="form-label">${t('puzzles.hiddenItemLabel')}</label>
+            <input class="form-input" placeholder="${t('puzzles.hiddenItemPlaceholder')}" 
                    value="${puzzle.question || ''}" data-cidx="${index}" data-cfield="question" />
           </div>
           <div class="form-group">
-            <label class="form-label">📝 找到后显示的文字</label>
-            <textarea class="form-input form-textarea" placeholder="例如：打开日记本，里面写着你们第一次约会的故事..."
+            <label class="form-label">${t('puzzles.hiddenFoundLabel')}</label>
+            <textarea class="form-input form-textarea" placeholder="${t('puzzles.hiddenFoundPlaceholder')}"
                       data-cidx="${index}" data-cfield="answer" style="height: 80px;">${puzzle.answer || ''}</textarea>
           </div>
         `;

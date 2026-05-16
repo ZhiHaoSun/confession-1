@@ -2,6 +2,7 @@
  * MenuScene — Romantic title screen with floating particles and start button.
  */
 import Phaser from 'phaser';
+import { t } from '../../i18n/i18n.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -81,7 +82,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Title
-    const title = config?.meta?.title || '记忆迷宫';
+    const title = config?.meta?.title || t('game.menuTitle');
     this.add.text(width / 2, height * 0.42, title, {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '32px',
@@ -91,8 +92,8 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Subtitle
-    const receiverName = config?.characters?.receiver?.name || '你';
-    this.add.text(width / 2, height * 0.52, `专属于 ${receiverName} 的解谜冒险`, {
+    const receiverName = config?.characters?.receiver?.name || t('generate.you');
+    this.add.text(width / 2, height * 0.52, t('game.menuSubtitle', { name: receiverName }), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '16px',
       color: '#e8a87c',
@@ -108,7 +109,7 @@ export class MenuScene extends Phaser.Scene {
     // Rounded corners effect
     btnBg.setStrokeStyle(0);
     
-    const btnText = this.add.text(width / 2, height * 0.72, '✨ 开始探索', {
+    const btnText = this.add.text(width / 2, height * 0.72, t('game.menuStart'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '18px',
       color: '#0a0e27',
@@ -145,7 +146,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Footer hint
-    this.add.text(width / 2, height * 0.9, '点击画面中发光的物品来探索记忆', {
+    this.add.text(width / 2, height * 0.9, t('game.menuHint'), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '12px',
       color: 'rgba(241, 240, 255, 0.3)',

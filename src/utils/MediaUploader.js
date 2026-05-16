@@ -1,8 +1,10 @@
+import { t } from '../i18n/i18n.js';
+
 export class MediaUploader {
   static async uploadFile(file, { folder = 'memorymaze', onStatus } = {}) {
     if (!file) return null;
 
-    onStatus?.('正在创建云端上传链接...');
+    onStatus?.(t('upload.creatingLink'));
     const signedUrlResponse = await fetch('/api/gcs-upload-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -15,14 +17,14 @@ export class MediaUploader {
 
     const signedUrlData = await signedUrlResponse.json().catch(() => ({}));
     if (!signedUrlResponse.ok) {
-      throw new Error(signedUrlData.error || '无法创建 Google Cloud 上传链接');
+      throw new Error(signedUrlData.error || t('upload.linkError'));
     }
 
     if (!signedUrlData.signedUrl || !signedUrlData.publicUrl) {
-      throw new Error('上传接口未返回 Google Cloud 链接。请使用 Vercel 部署或 vercel dev，并检查 GCS 环境变量。');
+      throw new Error(t('upload.linkMissing'));
     }
 
-    onStatus?.('正在上传到 Google Cloud...');
+    onStatus?.(t('upload.uploading'));
     const uploadResponse = await fetch(signedUrlData.signedUrl, {
       method: 'PUT',
       headers: {
@@ -32,10 +34,10 @@ export class MediaUploader {
     });
 
     if (!uploadResponse.ok) {
-      throw new Error(`Google Cloud 上传失败 (${uploadResponse.status})`);
+      throw new Error(`${t('upload.uploadFailed')} (${uploadResponse.status})`);
     }
 
-    onStatus?.('上传完成');
+    onStatus?.(t('upload.uploadDone'));
     return {
       url: signedUrlData.publicUrl,
       objectName: signedUrlData.objectName,

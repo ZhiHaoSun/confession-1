@@ -3,6 +3,7 @@
  * Generates config.json with real AI progress, and provides game preview + download.
  */
 import { ConfigGenerator } from '../../ai/ConfigGenerator.js';
+import { t } from '../../i18n/i18n.js';
 
 export class Step7Generate {
   constructor(wizard) {
@@ -36,14 +37,14 @@ export class Step7Generate {
             <div class="generate-icon">${useAI ? '🤖' : '💫'}</div>
           </div>
           <h2 class="step-title" style="margin-top: var(--space-xl);">
-            ${useAI ? '正在让 AI 编织你们的记忆迷宫...' : '正在编织你们的记忆迷宫...'}
+            ${useAI ? t('generate.aiGenerating') : t('generate.generating')}
           </h2>
 
           <div class="ai-progress-container" id="progress-container">
             ${this._buildProgressItems(sceneCount, useAI)}
           </div>
 
-          <p class="loading-text" id="loading-status">准备中...</p>
+          <p class="loading-text" id="loading-status">${t('generate.preparing')}</p>
         </div>
       </div>
     `;
@@ -56,11 +57,11 @@ export class Step7Generate {
     const memories = this.wizard.data.memories || [];
 
     for (let i = 0; i < sceneCount; i++) {
-      const name = memories[i]?.title || `场景 ${i + 1}`;
+      const name = memories[i]?.title || `${t('puzzles.sceneDefault')} ${i + 1}`;
       items.push(`
         <div class="ai-progress-item" id="progress-${i}">
           <div class="ai-progress-icon">${i + 1}</div>
-          <span>${useAI ? `AI 生成「${name}」` : `处理「${name}」`}</span>
+          <span>${useAI ? `${t('generate.aiScene')}「${name}」` : `${t('generate.processScene')}「${name}」`}</span>
         </div>
       `);
     }
@@ -69,7 +70,7 @@ export class Step7Generate {
       items.push(`
         <div class="ai-progress-item" id="progress-narrative">
           <div class="ai-progress-icon">💌</div>
-          <span>生成告白信</span>
+          <span>${t('generate.genLetter')}</span>
         </div>
       `);
     }
@@ -77,7 +78,7 @@ export class Step7Generate {
     items.push(`
       <div class="ai-progress-item" id="progress-finalize">
         <div class="ai-progress-icon">✨</div>
-        <span>组装游戏</span>
+        <span>${t('generate.assembleGame')}</span>
       </div>
     `);
 
@@ -151,15 +152,15 @@ export class Step7Generate {
       <div class="step-container">
         <div class="step-content generate-container">
           <div class="step-emoji" style="font-size: 4rem;">⚠️</div>
-          <h2 class="step-title">生成遇到问题</h2>
+          <h2 class="step-title">${t('generate.errorTitle')}</h2>
           <p class="step-subtitle" style="color: var(--accent-coral);">${this.escapeHtml(errorMsg)}</p>
 
           <div class="flex flex-center gap-lg mt-xl" style="flex-wrap: wrap;">
-            <button class="btn btn-primary" id="btn-retry">🔄 重试</button>
+            <button class="btn btn-primary" id="btn-retry">${t('generate.retry')}</button>
           </div>
 
           <div class="step-nav">
-            <button class="btn btn-ghost" id="btn-prev">← 返回修改</button>
+            <button class="btn btn-ghost" id="btn-prev">${t('generate.goBack')}</button>
           </div>
         </div>
       </div>
@@ -183,9 +184,9 @@ export class Step7Generate {
     const saveResult = this.saveConfigForPreview(configStr);
     const saveWarning = saveResult.ok ? '' : `
       <div class="glass-card mt-lg" style="text-align: left; border-color: rgba(248, 113, 113, 0.35);">
-        <strong style="color: var(--accent-coral);">预览存储空间不足</strong>
+        <strong style="color: var(--accent-coral);">${t('generate.storageTitle')}</strong>
         <p style="margin-top: var(--space-sm); font-size: 0.9rem;">
-          你的照片/音乐/视频太大，浏览器无法保存完整预览数据。请下载 config.json，或返回压缩素材后重新生成。
+          ${t('generate.storageDesc')}
         </p>
       </div>
     `;
@@ -195,40 +196,40 @@ export class Step7Generate {
         <div class="step-content generate-container">
           <div class="step-emoji" style="font-size: 4rem;">🎉</div>
           <h2 class="step-title animate-fadeInUp">
-            <span class="text-gradient">${d.myName || '你'} ❤ ${d.herName || '她'}</span> 的记忆迷宫已生成！
+            <span class="text-gradient">${d.myName || t('generate.you')} ❤ ${d.herName || t('generate.her')}</span> ${t('generate.resultTitle')}
           </h2>
           <p class="step-subtitle animate-fadeInUp delay-2">
-            ${useAI ? '🤖 AI 已为你的每段记忆注入了灵魂' : '游戏已准备就绪'}，你可以预览效果或下载配置文件
+            ${useAI ? t('generate.resultAI') : t('generate.resultReady')}${t('generate.resultHint')}
           </p>
           ${saveWarning}
 
           <!-- Preview -->
           <div class="preview-frame animate-fadeInScale delay-3">
-            <iframe src="/game.html?demo=true" id="game-preview" title="游戏预览"></iframe>
+            <iframe src="/game.html?demo=true" id="game-preview" title="${t('generate.gamePreview')}"></iframe>
           </div>
 
           <!-- Actions -->
           <div class="flex flex-center gap-lg mt-xl animate-fadeInUp delay-4" style="flex-wrap: wrap;">
             <button class="btn btn-primary btn-lg" id="btn-preview-fullscreen">
-              🎮 全屏预览游戏
+              ${t('generate.previewBtn')}
             </button>
             <a class="btn btn-secondary btn-lg" href="${configUrl}" download="config.json" id="btn-download">
-              📦 下载配置文件
+              ${t('generate.downloadBtn')}
             </a>
           </div>
 
           <!-- Config Preview -->
           <details class="glass-card mt-xl" style="text-align: left; cursor: pointer;">
             <summary style="font-weight: 600; padding: var(--space-sm) 0; color: var(--text-accent);">
-              📋 查看生成的 config.json
+              ${t('generate.viewConfig')}
             </summary>
             <pre style="margin-top: var(--space-md); padding: var(--space-md); background: var(--bg-primary); border-radius: var(--radius-md); overflow-x: auto; font-size: 0.8rem; line-height: 1.6; color: var(--text-secondary); max-height: 400px; overflow-y: auto;"><code>${this.escapeHtml(configStr)}</code></pre>
           </details>
 
           <div class="step-nav">
-            <button class="btn btn-ghost" id="btn-restart">🔄 重新创作</button>
+            <button class="btn btn-ghost" id="btn-restart">${t('generate.restartBtn')}</button>
             <button class="btn btn-primary" id="btn-save-and-open">
-              🚀 保存并在新窗口打开游戏
+              ${t('generate.saveOpenBtn')}
             </button>
           </div>
         </div>
@@ -310,7 +311,7 @@ export class Step7Generate {
       text-align: center;
       font-size: 0.9rem;
     `;
-    div.textContent = '当前素材太大，无法保存到浏览器预览。请下载 config.json，或压缩音频/视频/照片后再生成。';
+    div.textContent = t('generate.storageFull');
     container.querySelector('.step-nav')?.before(div);
   }
 

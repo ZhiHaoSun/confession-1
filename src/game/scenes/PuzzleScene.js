@@ -46,7 +46,7 @@ export class PuzzleScene extends Phaser.Scene {
       fontSize: '24px',
       color: '#ffffff',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setAlpha(0.5);
-    
+
     closeBtn.on('pointerover', () => closeBtn.setAlpha(1));
     closeBtn.on('pointerout', () => closeBtn.setAlpha(0.5));
     closeBtn.on('pointerdown', () => this.closePuzzle(false));
@@ -214,7 +214,7 @@ export class PuzzleScene extends Phaser.Scene {
     for (let i = 0; i < maxLen; i++) {
       const dotBg = this.add.rectangle(dotStartX + i * 44, cy - 35, 36, 44, 0x111638, 1)
         .setStrokeStyle(1, 0x333870);
-      
+
       const dotText = this.add.text(dotStartX + i * 44, cy - 35, '', {
         fontFamily: '"Inter", sans-serif',
         fontSize: '24px',
@@ -241,10 +241,10 @@ export class PuzzleScene extends Phaser.Scene {
     numbers.forEach((row, ri) => {
       row.forEach((num, ci) => {
         if (num === null) return;
-        
+
         const bx = padStartX + ci * (padSize + padGap);
         const by = padStartY + ri * (padSize + padGap);
-        
+
         const bg = this.add.rectangle(bx, by, padSize, padSize, 0x111638, 1)
           .setStrokeStyle(1, 0x333870)
           .setInteractive({ useHandCursor: true });
@@ -257,7 +257,7 @@ export class PuzzleScene extends Phaser.Scene {
 
         bg.on('pointerover', () => bg.setFillStyle(0x2a2f6e));
         bg.on('pointerout', () => bg.setFillStyle(0x111638));
-        
+
         bg.on('pointerdown', () => {
           if (num === '⌫') {
             password = password.slice(0, -1);
@@ -323,7 +323,7 @@ export class PuzzleScene extends Phaser.Scene {
     // "Found it!" button (simplified for MVP)
     const foundBg = this.add.rectangle(cx, cy + 75, 200, 48, 0xe8a87c, 1)
       .setInteractive({ useHandCursor: true });
-    
+
     const foundText = this.add.text(cx, cy + 75, '✨ 我找到了！', {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '16px',
@@ -390,7 +390,7 @@ export class PuzzleScene extends Phaser.Scene {
       const p = this.add.image(width / 2, height / 2, 'star')
         .setScale(Phaser.Math.FloatBetween(0.3, 0.8))
         .setAlpha(0.8);
-      
+
       this.tweens.add({
         targets: p,
         x: p.x + Phaser.Math.Between(-200, 200),
@@ -464,8 +464,8 @@ export class PuzzleScene extends Phaser.Scene {
     }
     this.cameras.main.fadeOut(300, 10, 14, 39);
     this.time.delayedCall(300, () => {
-      this.scene.resume('LevelScene', { 
-        solved, 
+      this.scene.resume('LevelScene', {
+        solved,
         reward: this.rewardData,
         itemIndex: this.itemIndex,
       });

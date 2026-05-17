@@ -184,6 +184,9 @@ export class Step7Generate {
     const shareUrl = mazeId
       ? (this.configData?.meta?.shareUrl || `${window.location.origin}/game.html?id=${mazeId}`)
       : '';
+    const qrUrl = shareUrl
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=16&data=${encodeURIComponent(shareUrl)}`
+      : '';
     const configStr = JSON.stringify(this.configData, null, 2);
     const configBlob = new Blob([configStr], { type: 'application/json' });
     const configUrl = URL.createObjectURL(configBlob);
@@ -199,11 +202,27 @@ export class Step7Generate {
       </div>
     `;
     const cloudShare = mazeId ? `
-      <div class="glass-card mt-lg" style="text-align: left;">
-        <strong style="color: var(--text-accent);">Maze ID: ${this.escapeHtml(mazeId)}</strong>
-        <div class="link-output" style="margin: var(--space-md) 0 0; max-width: none;">
-          <span class="link-output-url">${this.escapeHtml(shareUrl)}</span>
-          <button class="btn btn-secondary btn-sm" id="btn-copy-share" type="button">Copy</button>
+      <div class="glass-card mt-lg share-card">
+        <div class="share-card-main">
+          <div class="share-copy">
+            <strong style="color: var(--text-accent);">Maze ID: ${this.escapeHtml(mazeId)}</strong>
+            <p style="margin-top: var(--space-sm); font-size: 0.9rem;">Scan this QR code or send the link directly.</p>
+            <div class="link-output" style="margin: var(--space-md) 0 0; max-width: none;">
+              <span class="link-output-url">${this.escapeHtml(shareUrl)}</span>
+              <button class="btn btn-secondary btn-sm" id="btn-copy-share" type="button">Copy</button>
+            </div>
+            <div class="share-actions">
+              <a class="btn btn-secondary btn-sm" href="${this.escapeHtml(qrUrl)}" download="memorymaze-${this.escapeHtml(mazeId)}-qr.png" target="_blank" rel="noreferrer">
+                Download QR
+              </a>
+              <a class="btn btn-ghost btn-sm" href="${this.escapeHtml(shareUrl)}" target="_blank" rel="noreferrer">
+                Open Game
+              </a>
+            </div>
+          </div>
+          <div class="qr-panel">
+            <img src="${this.escapeHtml(qrUrl)}" alt="QR code for generated MemoryMaze game" />
+          </div>
         </div>
       </div>
     ` : '';

@@ -925,6 +925,47 @@
   text-overflow: ellipsis;
 }
 
+.share-card {
+  text-align: left;
+}
+
+.share-card-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-xl);
+  align-items: center;
+}
+
+.share-copy {
+  min-width: 0;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.qr-panel {
+  width: 168px;
+  height: 168px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+}
+
+.qr-panel img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
 .add-memory-btn {
   width: 100%;
   padding: var(--space-xl);
@@ -1061,5 +1102,16 @@
 
   .audio-file-name {
     max-width: 100%;
+  }
+
+  .share-card-main {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-panel {
+    width: min(220px, 100%);
+    height: auto;
+    aspect-ratio: 1;
+    justify-self: center;
   }
 }

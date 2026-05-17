@@ -1,7 +1,7 @@
 import { t } from '../i18n/i18n.js';
 
 export class MediaUploader {
-  static async uploadFile(file, { folder = 'memorymaze', onStatus } = {}) {
+  static async uploadFile(file, { folder = 'memorymaze', objectName, onStatus } = {}) {
     if (!file) return null;
 
     onStatus?.(t('upload.creatingLink'));
@@ -12,6 +12,7 @@ export class MediaUploader {
         fileName: file.name,
         contentType: file.type || 'application/octet-stream',
         folder,
+        objectName,
       }),
     });
 
@@ -69,6 +70,12 @@ export class MediaUploader {
     });
 
     return new File([blob], this.toJpegName(file.name), { type: 'image/jpeg' });
+  }
+
+  static async uploadJson(data, { fileName, objectName, folder = 'memorymaze/configs', onStatus } = {}) {
+    const json = JSON.stringify(data, null, 2);
+    const file = new File([json], fileName || 'config.json', { type: 'application/json' });
+    return await this.uploadFile(file, { folder, objectName, onStatus });
   }
 
   static fileToDataUrl(file) {

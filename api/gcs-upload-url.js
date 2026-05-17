@@ -29,6 +29,18 @@ function sanitizeFileName(fileName) {
   return safe || 'upload';
 }
 
+function sanitizeObjectName(objectName) {
+  const cleaned = String(objectName || '')
+    .split('/')
+    .map(sanitizeFileName)
+    .filter(Boolean)
+    .join('/');
+  if (!cleaned || cleaned.includes('..')) {
+    throw new Error('Invalid objectName');
+  }
+  return cleaned;
+}
+
 function getPrivateKey() {
   let raw = process.env.GCS_PRIVATE_KEY || '';
   // Strip surrounding quotes
@@ -96,7 +108,9 @@ export default async function handler(req, res) {
     const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '');
     const timestamp = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
     const randomId = crypto.randomBytes(8).toString('hex');
-    const objectName = `${folder}/${yyyymmdd}/${randomId}-${fileName}`;
+    const objectName = body.objectName
+      ? sanitizeObjectName(body.objectName)
+      : `${folder}/${yyyymmdd}/${randomId}-${fileName}`;
     const encodedObject = encodeObjectPath(objectName);
 
     const credentialScope = `${yyyymmdd}/auto/storage/goog4_request`;

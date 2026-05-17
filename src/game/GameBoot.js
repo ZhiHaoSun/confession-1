@@ -10,8 +10,21 @@ import { PuzzleScene } from './scenes/PuzzleScene.js';
 import { MemoryCardScene } from './scenes/MemoryCardScene.js';
 import { ConfessionScene } from './scenes/ConfessionScene.js';
 
-// Load game config from localStorage or URL
-function loadGameConfig() {
+// Load game config from share id, browser storage, or demo fallback.
+async function loadGameConfig() {
+  const params = new URLSearchParams(window.location.search);
+  const mazeId = params.get('id');
+
+  if (mazeId) {
+    try {
+      const response = await fetch(`/api/maze-config?id=${encodeURIComponent(mazeId)}`);
+      if (!response.ok) throw new Error(`Failed to load maze ${mazeId}`);
+      return await response.json();
+    } catch (err) {
+      console.warn('Failed to load maze config by id, falling back to local config:', err.message);
+    }
+  }
+
   try {
     const saved = sessionStorage.getItem('memorymaze_game_config') || localStorage.getItem('memorymaze_game_config');
     if (saved) return JSON.parse(saved);
@@ -105,24 +118,25 @@ function getDemoConfig() {
   };
 }
 
-// Initialize Phaser game
-const gameConfig = loadGameConfig();
-window.__MEMORYMAZE_GAME_CONFIG__ = gameConfig;
+async function bootGame() {
+  const gameConfig = await loadGameConfig();
+  window.__MEMORYMAZE_GAME_CONFIG__ = gameConfig;
 
-const config = {
-  type: Phaser.AUTO,
-  parent: 'game-container',
-  width: 960,
-  height: 540,
-  backgroundColor: '#0a0e27',
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-  scene: [PreloadScene, MenuScene, LevelScene, PuzzleScene, MemoryCardScene, ConfessionScene],
-};
+  const config = {
+    type: Phaser.AUTO,
+    parent: 'game-container',
+    width: 960,
+    height: 540,
+    backgroundColor: '#0a0e27',
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    scene: [PreloadScene, MenuScene, LevelScene, PuzzleScene, MemoryCardScene, ConfessionScene],
+  };
 
-const game = new Phaser.Game(config);
+  const game = new Phaser.Game(config);
+  game.registry.set('gameConfig', gameConfig);
+}
 
-// Store config in game registry for all scenes to access
-game.registry.set('gameConfig', gameConfig);
+bootGame();

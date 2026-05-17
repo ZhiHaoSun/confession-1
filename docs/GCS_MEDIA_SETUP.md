@@ -2,6 +2,20 @@
 
 MemoryMaze uploads photos, global scene music, and finale video to Google Cloud Storage before generating the game config. The generated config and OpenAI prompts then use HTTPS media URLs instead of base64 browser storage.
 
+Generated maze configs are uploaded as:
+
+```text
+gs://YOUR_BUCKET/memorymaze/configs/<mazeId>.json
+```
+
+Players can open:
+
+```text
+https://your-domain.vercel.app/game.html?id=<mazeId>
+```
+
+The game loads the config through `/api/maze-config?id=<mazeId>`.
+
 ## Required environment variables
 
 Set these in Vercel project settings:
@@ -10,6 +24,7 @@ Set these in Vercel project settings:
 - `GCS_CLIENT_EMAIL`
 - `GCS_PRIVATE_KEY`
 - `GCS_PUBLIC_BASE_URL` optional
+- `GCS_CONFIG_PREFIX` optional, defaults to `memorymaze/configs`
 
 The service account needs permission to create objects in the bucket, for example `roles/storage.objectCreator`.
 

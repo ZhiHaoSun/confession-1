@@ -4,6 +4,7 @@
  */
 import { ConfigGenerator } from '../../ai/ConfigGenerator.js';
 import { t } from '../../i18n/i18n.js';
+import { MediaUploader } from '../../utils/MediaUploader.js';
 
 export class Step7Generate {
   constructor(wizard) {
@@ -128,6 +129,9 @@ export class Step7Generate {
     try {
       const generator = new ConfigGenerator();
       this.configData = await generator.generate(this.wizard.data, onProgress);
+      await this.attachAndUploadMazeConfig(this.configData, (message) => {
+        if (statusEl) statusEl.textContent = message;
+      });
       this.generated = true;
       this.error = null;
 
@@ -176,6 +180,10 @@ export class Step7Generate {
 
   showResult(container) {
     const d = this.wizard.data;
+    const mazeId = this.configData?.meta?.configUploaded ? this.configData?.meta?.mazeId : '';
+    const shareUrl = mazeId
+      ? (this.configData?.meta?.shareUrl || `${window.location.origin}/game.html?id=${mazeId}`)
+      : '';
     const configStr = JSON.stringify(this.configData, null, 2);
     const configBlob = new Blob([configStr], { type: 'application/json' });
     const configUrl = URL.createObjectURL(configBlob);
@@ -190,6 +198,15 @@ export class Step7Generate {
         </p>
       </div>
     `;
+    const cloudShare = mazeId ? `
+      <div class="glass-card mt-lg" style="text-align: left;">
+        <strong style="color: var(--text-accent);">Maze ID: ${this.escapeHtml(mazeId)}</strong>
+        <div class="link-output" style="margin: var(--space-md) 0 0; max-width: none;">
+          <span class="link-output-url">${this.escapeHtml(shareUrl)}</span>
+          <button class="btn btn-secondary btn-sm" id="btn-copy-share" type="button">Copy</button>
+        </div>
+      </div>
+    ` : '';
 
     container.innerHTML = `
       <div class="step-container">
@@ -202,10 +219,11 @@ export class Step7Generate {
             ${useAI ? t('generate.resultAI') : t('generate.resultReady')}${t('generate.resultHint')}
           </p>
           ${saveWarning}
+          ${cloudShare}
 
           <!-- Preview -->
           <div class="preview-frame animate-fadeInScale delay-3">
-            <iframe src="/game.html?demo=true" id="game-preview" title="${t('generate.gamePreview')}"></iframe>
+            <iframe src="${mazeId ? `/game.html?id=${encodeURIComponent(mazeId)}` : '/game.html?demo=true'}" id="game-preview" title="${t('generate.gamePreview')}"></iframe>
           </div>
 
           <!-- Actions -->
@@ -244,6 +262,12 @@ export class Step7Generate {
       }
     });
 
+    container.querySelector('#btn-copy-share')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+      } catch { /* ignore */ }
+    });
+
     container.querySelector('#btn-restart')?.addEventListener('click', () => {
       this.wizard.resetData();
       this.generated = false;
@@ -253,12 +277,46 @@ export class Step7Generate {
 
     container.querySelector('#btn-save-and-open')?.addEventListener('click', () => {
       const result = this.saveConfigForPreview(configStr);
-      if (result.ok) {
+      if (shareUrl) {
+        window.open(shareUrl, '_blank');
+      } else if (result.ok) {
         window.open('/game.html', '_blank');
       } else {
         this.showInlineStorageError(container);
       }
     });
+  }
+
+  async attachAndUploadMazeConfig(config, onStatus) {
+    const mazeId = config.meta?.mazeId || this.createMazeId();
+    const shareUrl = `${window.location.origin}/game.html?id=${mazeId}`;
+
+    config.meta = {
+      ...(config.meta || {}),
+      mazeId,
+      shareUrl,
+    };
+
+    try {
+      onStatus?.('正在把迷宫配置上传到 Google Cloud...');
+      config.meta.configUploaded = true;
+      const upload = await MediaUploader.uploadJson(config, {
+        fileName: `${mazeId}.json`,
+        objectName: `memorymaze/configs/${mazeId}.json`,
+      });
+      config.meta.configUrl = upload.url;
+      onStatus?.('迷宫配置已上传');
+    } catch (err) {
+      config.meta.configUploadError = err.message || 'Maze config upload failed';
+      config.meta.configUploaded = false;
+      onStatus?.('云端配置上传失败，仍可下载本地 config.json');
+    }
+  }
+
+  createMazeId() {
+    const random = crypto.getRandomValues(new Uint8Array(10));
+    const token = Array.from(random, b => b.toString(36).padStart(2, '0')).join('').slice(0, 14);
+    return `maze_${Date.now().toString(36)}_${token}`;
   }
 
   saveConfigForPreview(configStr) {

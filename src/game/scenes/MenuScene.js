@@ -3,6 +3,7 @@
  */
 import Phaser from 'phaser';
 import { t } from '../../i18n/i18n.js';
+import { GAME_THEME } from '../GameTheme.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -13,7 +14,15 @@ export class MenuScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const config = this.registry.get('gameConfig');
     
-    this.cameras.main.fadeIn(800, 10, 14, 39);
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0xfffaf6, 0xffe8e6, 0xfff4ed, 0xfbe0d7, 1, 1, 1, 1);
+    bg.fillRect(0, 0, width, height);
+    bg.fillStyle(0xffffff, 0.28);
+    bg.fillCircle(width * 0.2, height * 0.18, 150);
+    bg.fillStyle(GAME_THEME.int.peach, 0.12);
+    bg.fillCircle(width * 0.82, height * 0.76, 180);
+
+    this.cameras.main.fadeIn(800, ...GAME_THEME.fade);
 
     // Starfield background
     for (let i = 0; i < 80; i++) {
@@ -21,8 +30,8 @@ export class MenuScene extends Phaser.Scene {
         Phaser.Math.Between(0, width),
         Phaser.Math.Between(0, height),
         Phaser.Math.FloatBetween(0.5, 2),
-        0xffffff,
-        Phaser.Math.FloatBetween(0.2, 0.7)
+        Phaser.Math.Between(0, 1) > 0.5 ? GAME_THEME.int.gold : GAME_THEME.int.rose,
+        Phaser.Math.FloatBetween(0.22, 0.55)
       );
       this.tweens.add({
         targets: star,
@@ -55,7 +64,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // Central glow effect
-    const glow = this.add.circle(width / 2, height / 2 - 20, 120, 0xe8a87c, 0.05);
+    const glow = this.add.circle(width / 2, height / 2 - 20, 140, GAME_THEME.int.accent, 0.08);
     this.tweens.add({
       targets: glow,
       scaleX: 1.3,
@@ -86,7 +95,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(width / 2, height * 0.42, title, {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '32px',
-      color: '#f1f0ff',
+      color: GAME_THEME.hex.ink,
       align: 'center',
       wordWrap: { width: width * 0.8 },
     }).setOrigin(0.5);
@@ -96,14 +105,14 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(width / 2, height * 0.52, t('game.menuSubtitle', { name: receiverName }), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '16px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
     }).setOrigin(0.5);
 
     // Decorative line
-    const line = this.add.rectangle(width / 2, height * 0.58, 60, 1, 0xe8a87c, 0.4);
+    const line = this.add.rectangle(width / 2, height * 0.58, 60, 1, GAME_THEME.int.accent, 0.45);
 
     // Start button
-    const btnBg = this.add.rectangle(width / 2, height * 0.72, 220, 52, 0xe8a87c, 1)
+    const btnBg = this.add.rectangle(width / 2, height * 0.72, 220, 52, GAME_THEME.int.accent, 1)
       .setInteractive({ useHandCursor: true });
     
     // Rounded corners effect
@@ -112,12 +121,12 @@ export class MenuScene extends Phaser.Scene {
     const btnText = this.add.text(width / 2, height * 0.72, t('game.menuStart'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '18px',
-      color: '#0a0e27',
+      color: GAME_THEME.hex.white,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
     // Button glow
-    const btnGlow = this.add.rectangle(width / 2, height * 0.72, 230, 62, 0xe8a87c, 0.15);
+    const btnGlow = this.add.rectangle(width / 2, height * 0.72, 230, 62, GAME_THEME.int.accent, 0.18);
     this.tweens.add({
       targets: btnGlow,
       scaleX: 1.1,
@@ -139,22 +148,47 @@ export class MenuScene extends Phaser.Scene {
 
     // Button click
     btnBg.on('pointerdown', () => {
-      this.cameras.main.fadeOut(600, 10, 14, 39);
+      this.cameras.main.fadeOut(600, ...GAME_THEME.fade);
       this.time.delayedCall(600, () => {
         this.scene.start('LevelScene', { levelIndex: 0 });
       });
     });
 
+    const mazeId = config?.meta?.mazeId;
+    const editButtonTargets = [];
+    if (mazeId) {
+      const editY = height * 0.81;
+      const editBg = this.add.rectangle(width / 2, editY, 190, 38, GAME_THEME.int.cream, 0.78)
+        .setStrokeStyle(1, GAME_THEME.int.accent, 0.38)
+        .setInteractive({ useHandCursor: true });
+      const editText = this.add.text(width / 2, editY, 'Edit puzzle', {
+        fontFamily: '"Inter", sans-serif',
+        fontSize: '14px',
+        color: GAME_THEME.hex.ink,
+      }).setOrigin(0.5);
+
+      editButtonTargets.push(editBg, editText);
+      editBg.on('pointerover', () => {
+        this.tweens.add({ targets: editButtonTargets, scaleX: 1.04, scaleY: 1.04, duration: 160, ease: 'Sine.easeOut' });
+      });
+      editBg.on('pointerout', () => {
+        this.tweens.add({ targets: editButtonTargets, scaleX: 1, scaleY: 1, duration: 160, ease: 'Sine.easeOut' });
+      });
+      editBg.on('pointerdown', () => {
+        window.location.href = `/?edit=${encodeURIComponent(mazeId)}`;
+      });
+    }
+
     // Footer hint
     this.add.text(width / 2, height * 0.9, t('game.menuHint'), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '12px',
-      color: 'rgba(241, 240, 255, 0.3)',
+      color: GAME_THEME.hex.mutedInk,
     }).setOrigin(0.5);
 
     // Entry animation
     this.tweens.add({
-      targets: [emoji, btnBg, btnText, btnGlow],
+      targets: [emoji, btnBg, btnText, btnGlow, ...editButtonTargets],
       alpha: { from: 0, to: 1 },
       y: '+=0',
       duration: 800,

@@ -12,30 +12,99 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #0a0e27;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255, 232, 230, 0.95), transparent 34%),
+        radial-gradient(circle at 82% 78%, rgba(242, 167, 122, 0.26), transparent 36%),
+        linear-gradient(135deg, #fffaf6 0%, #fff4ed 45%, #ffe8e6 100%);
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       font-family: 'Noto Serif SC', serif;
+      touch-action: manipulation;
     }
     #game-container {
       width: 100%;
       max-width: 960px;
       aspect-ratio: 16/9;
       position: relative;
+      transition: transform 240ms ease, width 240ms ease, height 240ms ease;
     }
     #game-container canvas {
       width: 100% !important;
       height: 100% !important;
       border-radius: 12px;
-      box-shadow: 0 0 60px rgba(232, 168, 124, 0.2);
+      box-shadow: 0 22px 70px rgba(216, 92, 114, 0.18);
+    }
+    #mobile-game-controls {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 50;
+      display: none;
+      gap: 8px;
+      align-items: center;
+      pointer-events: none;
+    }
+    #mobile-game-controls button {
+      pointer-events: auto;
+      border: 1px solid rgba(216, 92, 114, 0.32);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(255, 250, 246, 0.9);
+      color: #4a2330;
+      font: 600 13px 'Inter', 'Noto Serif SC', sans-serif;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(12px);
+    }
+    #exit-rotate-btn {
+      display: none;
+    }
+
+    @media (max-width: 820px) and (orientation: portrait) {
+      body {
+        padding: max(10px, env(safe-area-inset-top)) 10px max(70px, env(safe-area-inset-bottom)) 10px;
+      }
+      #game-container {
+        width: 100%;
+        max-width: none;
+      }
+      #mobile-game-controls {
+        display: flex;
+      }
+      body.game-rotated {
+        padding: 0;
+      }
+      body.game-rotated #game-container {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        width: min(100vh, calc(100vw * 16 / 9));
+        height: auto;
+        max-width: none;
+        aspect-ratio: 16/9;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
+      }
+      body.game-rotated #game-container canvas {
+        border-radius: 0;
+      }
+      body.game-rotated #rotate-game-btn {
+        display: none;
+      }
+      body.game-rotated #exit-rotate-btn {
+        display: inline-flex;
+      }
     }
   </style>
 </head>
 <body>
   <div id="game-container"></div>
+  <div id="mobile-game-controls" aria-label="Mobile game controls">
+    <button id="rotate-game-btn" type="button">横屏游玩</button>
+    <button id="exit-rotate-btn" type="button">退出横屏</button>
+  </div>
   <script type="module" src="/src/game/GameBoot.js"></script>
 </body>
 </html>

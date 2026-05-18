@@ -3,6 +3,8 @@
  * Displayed after solving a puzzle to reveal the memory.
  */
 import Phaser from 'phaser';
+import { GAME_THEME } from '../GameTheme.js';
+import { t } from '../../i18n/i18n.js';
 
 export class MemoryCardScene extends Phaser.Scene {
   constructor() {
@@ -22,10 +24,10 @@ export class MemoryCardScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroyDescriptionPanel());
 
     // Dark overlay
-    const overlay = this.add.rectangle(cx, height / 2, width, height, 0x0a0e27, 0.9)
+    const overlay = this.add.rectangle(cx, height / 2, width, height, GAME_THEME.int.ink, 0.22)
       .setInteractive();
 
-    this.cameras.main.fadeIn(400, 10, 14, 39);
+    this.cameras.main.fadeIn(400, ...GAME_THEME.fade);
 
     // Card container
     const cardW = Math.min(width * 0.8, 520);
@@ -33,9 +35,9 @@ export class MemoryCardScene extends Phaser.Scene {
     const cardY = height / 2;
 
     // Card background with glow
-    const glow = this.add.rectangle(cx, cardY, cardW + 4, cardH + 4, 0xe8a87c, 0.2);
-    const card = this.add.rectangle(cx, cardY, cardW, cardH, 0x111638, 0.98);
-    card.setStrokeStyle(1, 0xe8a87c, 0.3);
+    const glow = this.add.rectangle(cx, cardY, cardW + 4, cardH + 4, GAME_THEME.int.accent, 0.16);
+    const card = this.add.rectangle(cx, cardY, cardW, cardH, GAME_THEME.int.panel, 0.98);
+    card.setStrokeStyle(1, GAME_THEME.int.accent, 0.24);
 
     // Memory shard icon
     this.add.text(cx, cardY - cardH / 2 + 35, '💎', {
@@ -43,23 +45,23 @@ export class MemoryCardScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Reward text
-    const rewardText = this.rewardData?.text || '你找到了一段珍贵的记忆碎片';
-    this.add.text(cx, cardY - cardH / 2 + 72, '记忆碎片已解锁', {
+    const rewardText = this.rewardData?.text || t('generate.foundShardHidden');
+    this.add.text(cx, cardY - cardH / 2 + 72, t('game.shardUnlocked'), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '12px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
       fontStyle: 'bold',
       letterSpacing: 4,
     }).setOrigin(0.5);
 
     // Divider
-    this.add.rectangle(cx, cardY - cardH / 2 + 95, cardW * 0.6, 1, 0xe8a87c, 0.2);
+    this.add.rectangle(cx, cardY - cardH / 2 + 95, cardW * 0.6, 1, GAME_THEME.int.accent, 0.22);
 
     // Level title
     this.add.text(cx, cardY - cardH / 2 + 120, this.levelData.title, {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '22px',
-      color: '#f1f0ff',
+      color: GAME_THEME.hex.ink,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
@@ -78,20 +80,20 @@ export class MemoryCardScene extends Phaser.Scene {
     this.add.text(cx, cardY + cardH / 2 - 70, rewardLines[rewardLines.length - 1] || rewardText, {
       fontFamily: '"Inter", sans-serif',
       fontSize: '13px',
-      color: '#f0c27f',
+      color: GAME_THEME.hex.gold,
       wordWrap: { width: cardW - 60 },
       align: 'center',
     }).setOrigin(0.5);
 
     // Continue button
     const btnY = cardY + cardH / 2 - 25;
-    const btnBg = this.add.rectangle(cx, btnY, 180, 40, 0xe8a87c, 1)
+    const btnBg = this.add.rectangle(cx, btnY, 180, 40, GAME_THEME.int.accent, 1)
       .setInteractive({ useHandCursor: true });
-    
-    const btnText = this.add.text(cx, btnY, '继续探索 →', {
+
+    const btnText = this.add.text(cx, btnY, t('game.continueExplore'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '15px',
-      color: '#0a0e27',
+      color: GAME_THEME.hex.white,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
@@ -103,7 +105,7 @@ export class MemoryCardScene extends Phaser.Scene {
     });
 
     btnBg.on('pointerdown', () => {
-      this.cameras.main.fadeOut(400, 10, 14, 39);
+      this.cameras.main.fadeOut(400, ...GAME_THEME.fade);
       this.time.delayedCall(400, () => {
         if (this.onDoneCallback) {
           this.scene.resume('LevelScene');
@@ -120,7 +122,7 @@ export class MemoryCardScene extends Phaser.Scene {
         Phaser.Math.Between(cardY - cardH / 2, cardY + cardH / 2),
         'star'
       ).setScale(0.3).setAlpha(0.1);
-      
+
       this.tweens.add({
         targets: p,
         y: p.y - Phaser.Math.Between(30, 60),
@@ -154,7 +156,7 @@ export class MemoryCardScene extends Phaser.Scene {
     panel.style.cssText = `
       position: absolute;
       z-index: 12;
-      color: rgba(241, 240, 255, 0.88);
+      color: rgba(74, 35, 48, 0.82);
       font-family: "Noto Serif SC", "Inter", serif;
       font-size: 15px;
       line-height: 1.85;
@@ -166,7 +168,7 @@ export class MemoryCardScene extends Phaser.Scene {
       padding: 2px 10px;
       box-sizing: border-box;
       scrollbar-width: thin;
-      scrollbar-color: rgba(232, 168, 124, 0.6) rgba(255, 255, 255, 0.08);
+      scrollbar-color: rgba(216, 92, 114, 0.55) rgba(216, 92, 114, 0.08);
       pointer-events: auto;
     `;
 

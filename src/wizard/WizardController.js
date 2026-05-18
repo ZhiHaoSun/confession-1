@@ -29,6 +29,10 @@ export class WizardController {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) return JSON.parse(saved);
     } catch (e) { /* ignore */ }
+    return this.createDefaultData();
+  }
+
+  createDefaultData() {
     return {
       herName: '',
       herBirthday: '',
@@ -54,10 +58,12 @@ export class WizardController {
       const serializableData = { ...this.data };
       // Don't save file blobs
       delete serializableData.confessionVideo;
+      delete serializableData.existingConfig;
       serializableData.memories = serializableData.memories.map(m => ({
         ...m,
         photoFile: undefined,
         photoUrl: m.photoUrl || '',
+        existingLevel: undefined,
       }));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableData));
     } catch (e) { /* ignore */ }
@@ -74,6 +80,83 @@ export class WizardController {
       new Step7Generate(this),
     ];
     this.render();
+  }
+
+  async loadEditMode(mazeId) {
+    const cleanMazeId = String(mazeId || '').trim();
+    if (!cleanMazeId) {
+      throw new Error('Missing maze id.');
+    }
+
+    const response = await fetch(`/api/maze-config?id=${encodeURIComponent(cleanMazeId)}`);
+    if (!response.ok) {
+      throw new Error(`Cloud config load failed (${response.status}).`);
+    }
+
+    const config = await response.json();
+    this.data = this.mapConfigToWizardData(config, cleanMazeId);
+    this.currentStep = 1;
+    this.saveData();
+  }
+
+  mapConfigToWizardData(config, mazeId) {
+    const defaults = this.createDefaultData();
+    const levels = Array.isArray(config?.levels) ? config.levels : [];
+    const firstMusic = levels.find(level => level?.music?.url || level?.music?.title || level?.music?.fileName)?.music || {};
+    const finale = config?.finale || {};
+    const characters = config?.characters || {};
+    const receiver = characters.receiver || {};
+    const creator = characters.creator || {};
+
+    const memories = levels.map((level, index) => ({
+      id: level.id || index + 1,
+      title: level.title || '',
+      description: level.description || level.memory_shard_text || '',
+      date: level.date || '',
+      photos: this.getLevelPhotos(level),
+      location: level.location || '',
+      people: level.people || '',
+      dialogue: level.dialogue || '',
+      soundtrack: level.soundtrack || level.music?.title || '',
+      existingLevel: level,
+    }));
+
+    const puzzles = levels.map((level, index) => {
+      const puzzleInteractive = (level.interactives || []).find(item => item?.puzzle) || {};
+      const puzzle = puzzleInteractive.puzzle || {};
+      return {
+        memoryIndex: index,
+        type: puzzle.type || puzzleInteractive.type || 'trivia',
+        question: puzzle.question || '',
+        answer: puzzle.answer || '',
+        hint: puzzle.hint || '',
+      };
+    });
+
+    return {
+      ...defaults,
+      myName: creator.name || '',
+      herName: receiver.name || '',
+      artStyle: config?.meta?.artStyle || defaults.artStyle,
+      memories,
+      puzzles,
+      confessionVideoUrl: finale.videoUrl || '',
+      confessionVideoName: finale.videoName || '',
+      globalSceneMusicTitle: firstMusic.title || '',
+      globalSceneMusicUrl: firstMusic.url || '',
+      globalSceneMusicName: firstMusic.fileName || '',
+      bgm: finale.bgm || defaults.bgm,
+      loveLetter: finale.loveLetter || '',
+      editMode: true,
+      editMazeId: mazeId || config?.meta?.mazeId || '',
+      existingConfig: config,
+    };
+  }
+
+  getLevelPhotos(level) {
+    const photos = Array.isArray(level?.photos) ? level.photos.filter(Boolean) : [];
+    if (photos.length > 0) return photos;
+    return level?.background ? [level.background] : [];
   }
 
   render() {

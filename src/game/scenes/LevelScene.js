@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { t } from '../../i18n/i18n.js';
+import { GAME_THEME } from '../GameTheme.js';
 
 export class LevelScene extends Phaser.Scene {
   constructor() {
@@ -73,13 +74,13 @@ export class LevelScene extends Phaser.Scene {
   showMusicPrompt(title, w, h) {
     if (this.musicPrompt) return;
 
-    const bg = this.add.rectangle(w - 96, h - 34, 160, 40, 0x0a0e27, 0.78)
-      .setStrokeStyle(1, 0xe8a87c, 0.35)
+    const bg = this.add.rectangle(w - 96, h - 34, 160, 40, GAME_THEME.int.panel, 0.9)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.32)
       .setInteractive({ useHandCursor: true });
     const label = this.add.text(w - 96, h - 34, t('game.playMusic', { title: title }), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '12px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
       wordWrap: { width: 136 },
       align: 'center',
     }).setOrigin(0.5);
@@ -113,7 +114,7 @@ export class LevelScene extends Phaser.Scene {
     const scale = Math.max(w / photo.width, h / photo.height);
     photo.setScale(scale);
 
-    this.add.rectangle(w / 2, h / 2, w, h, 0x0a0e27, 0.28);
+    this.add.rectangle(w / 2, h / 2, w, h, 0xfff4ed, 0.2);
   }
 
   drawBackground(artStyle, level, w, h) {
@@ -205,7 +206,7 @@ export class LevelScene extends Phaser.Scene {
       }
     } else {
       // Starry night
-      gfx.fillGradientStyle(0x1a237e, 0x0d1b2a, 0x1b1b3a, 0x0d1b2a, 1, 1, 1, 1);
+      gfx.fillGradientStyle(0x4a2330, 0x7d4150, 0xf2a77a, 0xffe8e6, 1, 1, 1, 1);
       gfx.fillRect(0, 0, w, h);
       // Stars
       for (let i = 0; i < 100; i++) {
@@ -218,7 +219,7 @@ export class LevelScene extends Phaser.Scene {
       gfx.fillStyle(0xfff9c4, 0.5);
       gfx.fillCircle(w * 0.8, h * 0.15, 25);
       // Grass
-      gfx.fillStyle(0x1b5e20, 0.2);
+      gfx.fillStyle(0x7aa874, 0.24);
       gfx.fillRect(0, h * 0.78, w, h * 0.22);
     }
   }
@@ -229,22 +230,22 @@ export class LevelScene extends Phaser.Scene {
     
     if (idx === 0) {
       // Indoor warm light
-      gfx.fillGradientStyle(0x1a237e, 0x283593, 0x3949ab, 0x1a237e, 1, 1, 1, 1);
+      gfx.fillGradientStyle(0xfff4ed, 0xffe8e6, 0xfbe0d7, 0xfffaf6, 1, 1, 1, 1);
       gfx.fillRect(0, 0, w, h);
       // Warm light through windows
-      gfx.fillStyle(0xff8f00, 0.1);
+      gfx.fillStyle(0xf2a77a, 0.16);
       gfx.fillRect(w * 0.3, h * 0.05, w * 0.4, h * 0.4);
       // Library details
-      gfx.fillStyle(0x3e2723, 0.6);
+      gfx.fillStyle(0x7d5a50, 0.28);
       gfx.fillRect(0, h * 0.1, w * 0.18, h * 0.8);
       gfx.fillRect(w * 0.82, h * 0.1, w * 0.18, h * 0.8);
       // Light rays
-      gfx.fillStyle(0xffd54f, 0.03);
+      gfx.fillStyle(0xd9983f, 0.06);
       gfx.fillTriangle(w * 0.35, h * 0.05, w * 0.2, h, w * 0.5, h);
       gfx.fillTriangle(w * 0.55, h * 0.05, w * 0.4, h, w * 0.7, h);
     } else if (idx === 1) {
       // Sunset sky
-      gfx.fillGradientStyle(0x1a237e, 0xad1457, 0xff6f00, 0xff8f00, 1, 1, 1, 1);
+      gfx.fillGradientStyle(0xffe8e6, 0xffc9bd, 0xf2a77a, 0xfff4ed, 1, 1, 1, 1);
       gfx.fillRect(0, 0, w, h);
       // Clouds
       gfx.fillStyle(0xffffff, 0.15);
@@ -256,7 +257,7 @@ export class LevelScene extends Phaser.Scene {
         }
       }
       // City silhouette
-      gfx.fillStyle(0x0d1117, 0.9);
+      gfx.fillStyle(0x7d4150, 0.42);
       gfx.fillRect(0, h * 0.65, w, h * 0.35);
       for (let i = 0; i < 15; i++) {
         const bx = i * (w / 15);
@@ -268,7 +269,7 @@ export class LevelScene extends Phaser.Scene {
       gfx.strokeCircle(w * 0.65, h * 0.35, 80);
     } else {
       // Night sky with aurora
-      gfx.fillGradientStyle(0x0d1b2a, 0x1b2838, 0x0d1b2a, 0x1b2838, 1, 1, 1, 1);
+      gfx.fillGradientStyle(0x4a2330, 0x7d4150, 0xb86b73, 0xf2a77a, 1, 1, 1, 1);
       gfx.fillRect(0, 0, w, h);
       // Stars
       for (let i = 0; i < 150; i++) {
@@ -276,12 +277,12 @@ export class LevelScene extends Phaser.Scene {
         gfx.fillCircle(Phaser.Math.Between(0, w), Phaser.Math.Between(0, h * 0.6), Phaser.Math.FloatBetween(0.5, 2.5));
       }
       // Aurora hints
-      gfx.fillStyle(0x4fc3f7, 0.03);
+      gfx.fillStyle(0xffe8e6, 0.06);
       gfx.fillRect(w * 0.1, h * 0.05, w * 0.3, h * 0.3);
-      gfx.fillStyle(0x7c4dff, 0.03);
+      gfx.fillStyle(0xf2a77a, 0.06);
       gfx.fillRect(w * 0.5, h * 0.08, w * 0.35, h * 0.25);
       // Grass field
-      gfx.fillStyle(0x1b5e20, 0.3);
+      gfx.fillStyle(0x7aa874, 0.28);
       gfx.fillRect(0, h * 0.75, w, h * 0.25);
     }
 
@@ -367,18 +368,18 @@ export class LevelScene extends Phaser.Scene {
 
   showLevelTitle(level, w, h) {
     // Dark overlay
-    const overlay = this.add.rectangle(w / 2, h / 2, w, h, 0x0a0e27, 0.7);
+    const overlay = this.add.rectangle(w / 2, h / 2, w, h, GAME_THEME.int.cream, 0.82);
     
     const chapterText = this.add.text(w / 2, h / 2 - 30, t('game.chapter', { n: level.id }), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '14px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
     }).setOrigin(0.5).setAlpha(0);
 
     const titleText = this.add.text(w / 2, h / 2 + 5, level.title, {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '36px',
-      color: '#f1f0ff',
+      color: GAME_THEME.hex.ink,
       fontStyle: 'bold',
     }).setOrigin(0.5).setAlpha(0);
 
@@ -445,8 +446,8 @@ export class LevelScene extends Phaser.Scene {
       const hintText = this.add.text(x, y + 35, t('game.explore'), {
         fontFamily: '"Inter", sans-serif',
         fontSize: '11px',
-        color: '#e8a87c',
-        backgroundColor: 'rgba(10, 14, 39, 0.7)',
+        color: GAME_THEME.hex.accent,
+        backgroundColor: 'rgba(255, 250, 246, 0.86)',
         padding: { x: 8, y: 4 },
       }).setOrigin(0.5).setAlpha(0);
 
@@ -532,13 +533,13 @@ export class LevelScene extends Phaser.Scene {
     if (this.levelCompleteText) return;
 
     const { width, height } = this.cameras.main;
-    const panel = this.add.rectangle(width / 2, height - 54, 300, 48, 0x0a0e27, 0.82)
-      .setStrokeStyle(1, 0xe8a87c, 0.35)
+    const panel = this.add.rectangle(width / 2, height - 54, 300, 48, GAME_THEME.int.panel, 0.92)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.32)
       .setInteractive({ useHandCursor: true });
     const label = this.add.text(width / 2, height - 54, t('game.levelComplete'), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '15px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
@@ -554,7 +555,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   goToNextLevel() {
-    this.cameras.main.fadeOut(600, 10, 14, 39);
+    this.cameras.main.fadeOut(600, ...GAME_THEME.fade);
     this.time.delayedCall(600, () => {
       this.scene.start('LevelScene', { levelIndex: this.levelIndex + 1 });
     });
@@ -562,13 +563,13 @@ export class LevelScene extends Phaser.Scene {
 
   createHUD(level, totalLevels, w) {
     // Top bar
-    const hudBg = this.add.rectangle(w / 2, 0, w, 44, 0x0a0e27, 0.8).setOrigin(0.5, 0);
+    const hudBg = this.add.rectangle(w / 2, 0, w, 44, GAME_THEME.int.panel, 0.88).setOrigin(0.5, 0);
 
     // Level indicator
     this.add.text(16, 12, `${level.id} / ${totalLevels}`, {
       fontFamily: '"Inter", sans-serif',
       fontSize: '13px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
     });
 
     // Memory shards
@@ -577,7 +578,7 @@ export class LevelScene extends Phaser.Scene {
     this.shardTextObj = this.add.text(w - 16, 12, shardText, {
       fontFamily: '"Inter", sans-serif',
       fontSize: '13px',
-      color: 'rgba(241, 240, 255, 0.6)',
+      color: GAME_THEME.hex.softInk,
     }).setOrigin(1, 0);
   }
 

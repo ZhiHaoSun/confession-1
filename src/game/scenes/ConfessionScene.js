@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { t } from '../../i18n/i18n.js';
+import { GAME_THEME } from '../GameTheme.js';
 
 export class ConfessionScene extends Phaser.Scene {
   constructor() {
@@ -14,12 +15,16 @@ export class ConfessionScene extends Phaser.Scene {
     const cx = width / 2;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroyLetterPanel());
 
-    this.cameras.main.fadeIn(1200, 10, 14, 39);
+    this.cameras.main.fadeIn(1200, ...GAME_THEME.fade);
 
     // Starfield background
     const gfx = this.add.graphics();
-    gfx.fillGradientStyle(0x0a0e27, 0x0d1b2a, 0x1a1040, 0x2d1b69, 1, 1, 1, 1);
+    gfx.fillGradientStyle(0xfffaf6, 0xffe8e6, 0xfff4ed, 0xfbe0d7, 1, 1, 1, 1);
     gfx.fillRect(0, 0, width, height);
+    gfx.fillStyle(0xffffff, 0.28);
+    gfx.fillCircle(width * 0.22, height * 0.2, 150);
+    gfx.fillStyle(GAME_THEME.int.peach, 0.12);
+    gfx.fillCircle(width * 0.78, height * 0.76, 190);
 
     // Stars
     for (let i = 0; i < 120; i++) {
@@ -27,8 +32,8 @@ export class ConfessionScene extends Phaser.Scene {
         Phaser.Math.Between(0, width),
         Phaser.Math.Between(0, height),
         Phaser.Math.FloatBetween(0.5, 2),
-        0xffffff,
-        Phaser.Math.FloatBetween(0.2, 0.8)
+        Phaser.Math.Between(0, 1) > 0.5 ? GAME_THEME.int.gold : GAME_THEME.int.rose,
+        Phaser.Math.FloatBetween(0.18, 0.5)
       );
       this.tweens.add({
         targets: star,
@@ -41,7 +46,7 @@ export class ConfessionScene extends Phaser.Scene {
     }
 
     // Central glow
-    const centerGlow = this.add.circle(cx, height * 0.4, 180, 0xe8a87c, 0.04);
+    const centerGlow = this.add.circle(cx, height * 0.4, 180, GAME_THEME.int.accent, 0.06);
     this.tweens.add({
       targets: centerGlow,
       scaleX: 1.5,
@@ -56,7 +61,7 @@ export class ConfessionScene extends Phaser.Scene {
     const allCollectedText = this.add.text(cx, height * 0.12, t('game.allCollected'), {
       fontFamily: '"Inter", sans-serif',
       fontSize: '14px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
       letterSpacing: 2,
     }).setOrigin(0.5).setAlpha(0);
 
@@ -115,8 +120,8 @@ export class ConfessionScene extends Phaser.Scene {
       border: 0;
       border-radius: 999px;
       padding: 12px 18px;
-      background: #e8a87c;
-      color: #0a0e27;
+      background: #d85c72;
+      color: #ffffff;
       font: 600 14px "Noto Serif SC", serif;
       cursor: pointer;
       box-shadow: 0 8px 30px rgba(0,0,0,0.35);
@@ -143,7 +148,7 @@ export class ConfessionScene extends Phaser.Scene {
       const heart = this.add.image(cx, cy, 'heart')
         .setScale(Phaser.Math.FloatBetween(0.3, 1.2))
         .setAlpha(0.8)
-        .setTint(Phaser.Math.Between(0, 1) > 0.5 ? 0xe8a87c : 0xd4a5a5);
+        .setTint(Phaser.Math.Between(0, 1) > 0.5 ? GAME_THEME.int.accent : GAME_THEME.int.rose);
 
       const angle = (i / 30) * Math.PI * 2;
       const dist = Phaser.Math.Between(80, 250);
@@ -172,9 +177,9 @@ export class ConfessionScene extends Phaser.Scene {
     const cardW = Math.min(w * 0.85, 580);
     const letterY = h * 0.48;
 
-    const cardGlow = this.add.rectangle(cx, letterY, cardW + 6, h * 0.6 + 6, 0xe8a87c, 0.15);
-    const cardBg = this.add.rectangle(cx, letterY, cardW, h * 0.6, 0x111638, 0.95);
-    cardBg.setStrokeStyle(1, 0xe8a87c, 0.2);
+    const cardGlow = this.add.rectangle(cx, letterY, cardW + 6, h * 0.6 + 6, GAME_THEME.int.accent, 0.14);
+    const cardBg = this.add.rectangle(cx, letterY, cardW, h * 0.6, GAME_THEME.int.panel, 0.96);
+    cardBg.setStrokeStyle(1, GAME_THEME.int.accent, 0.22);
 
     // Entry animation
     this.tweens.add({
@@ -203,7 +208,7 @@ export class ConfessionScene extends Phaser.Scene {
     const headerText = this.add.text(cx, letterY - h * 0.19, t('confession.dear', { name: receiverName }), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '18px',
-      color: '#e8a87c',
+      color: GAME_THEME.hex.accent,
     }).setOrigin(0.5).setAlpha(0);
 
     this.tweens.add({
@@ -214,7 +219,7 @@ export class ConfessionScene extends Phaser.Scene {
     });
 
     // Divider
-    const divider = this.add.rectangle(cx, letterY - h * 0.14, cardW * 0.5, 1, 0xe8a87c, 0).setOrigin(0.5);
+    const divider = this.add.rectangle(cx, letterY - h * 0.14, cardW * 0.5, 1, GAME_THEME.int.accent, 0).setOrigin(0.5);
     this.tweens.add({ targets: divider, alpha: 0.3, duration: 600, delay: 800 });
 
     // Letter body. Use a scrollable DOM panel so long OpenAI-generated
@@ -236,7 +241,7 @@ export class ConfessionScene extends Phaser.Scene {
       const signature = this.add.text(cx + cardW * 0.15, letterY + h * 0.2, t('confession.forever', { name: creatorName }), {
         fontFamily: '"Caveat", cursive',
         fontSize: '20px',
-        color: '#e8a87c',
+        color: GAME_THEME.hex.accent,
       }).setOrigin(0.5).setAlpha(0);
 
       this.tweens.add({
@@ -286,7 +291,7 @@ export class ConfessionScene extends Phaser.Scene {
     panel.style.cssText = `
       position: absolute;
       z-index: 12;
-      color: rgba(241, 240, 255, 0.88);
+      color: rgba(74, 35, 48, 0.84);
       font-family: "Noto Serif SC", "Inter", serif;
       font-size: 14px;
       line-height: 1.9;
@@ -300,7 +305,7 @@ export class ConfessionScene extends Phaser.Scene {
       opacity: 0;
       transition: opacity 300ms ease;
       scrollbar-width: thin;
-      scrollbar-color: rgba(232, 168, 124, 0.6) rgba(255, 255, 255, 0.08);
+      scrollbar-color: rgba(216, 92, 114, 0.55) rgba(216, 92, 114, 0.08);
       pointer-events: auto;
     `;
 

@@ -5,6 +5,7 @@
  * Falls back to local generation when no key is available.
  */
 import { AIService } from './AIService.js';
+import { t } from '../i18n/i18n.js';
 
 export class ConfigGenerator {
   constructor() {
@@ -23,7 +24,8 @@ export class ConfigGenerator {
     this.onProgress = onProgress || (() => {});
     const today = new Date().toISOString().split('T')[0];
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    const useAI = !!apiKey;
+    const isEditMode = !!(d.editMode && d.existingConfig);
+    const useAI = !!apiKey && !isEditMode;
 
     if (useAI) {
       this.aiService = new AIService(apiKey);
@@ -41,8 +43,8 @@ export class ConfigGenerator {
     }
 
     const characters = {
-      creator: { name: d.myName || '他' },
-      receiver: { name: d.herName || '她' },
+      creator: { name: d.myName || t('generate.he') },
+      receiver: { name: d.herName || t('generate.she') },
     };
 
     // Build levels from memories
@@ -52,8 +54,22 @@ export class ConfigGenerator {
 
     let levels = [];
 
+    if (isEditMode) {
+      this.onProgress(0, Math.max(1, totalSteps), t('generate.updateConfig'));
+      const editedConfig = this._generateEditedConfig(d, {
+        today,
+        characters,
+        puzzleKeys,
+        memories,
+        puzzles,
+      });
+      this.onProgress(Math.max(0, totalSteps - 1), Math.max(1, totalSteps), t('generate.saveConfig'));
+      await this._delay(200);
+      return editedConfig;
+    }
+
     if (memories.length === 0) {
-      this.onProgress(0, 1, '使用示例场景...');
+      this.onProgress(0, 1, t('generate.useDemo'));
       levels = this.getDemoLevels(d);
     } else if (useAI) {
       // AI-powered generation
@@ -68,7 +84,7 @@ export class ConfigGenerator {
     let openingText = '';
 
     if (useAI && memories.length > 0) {
-      this.onProgress(memories.length, totalSteps, '正在为你写一封深情的告白信...');
+      this.onProgress(memories.length, totalSteps, t('generate.aiWriteLetter'));
       try {
         const narrative = await this.aiService.generateNarrative(
           memories, characters, d.loveLetter
@@ -81,15 +97,15 @@ export class ConfigGenerator {
     }
 
     if (!loveLetter) {
-      loveLetter = `亲爱的${d.herName || '你'}，谢谢你出现在我的生命中。每一段记忆，都是我最珍贵的宝藏。`;
+      loveLetter = t('generate.defaultLoveLetter', { name: d.herName || t('generate.you') });
     }
 
-    this.onProgress(totalSteps - 1, totalSteps, '正在组装游戏... ✨');
+    this.onProgress(totalSteps - 1, totalSteps, t('generate.assembleGameProgress'));
     await this._delay(300);
 
     return {
       meta: {
-        title: `${d.myName || '他'} ❤ ${d.herName || '她'} 的记忆迷宫`,
+        title: t('generate.mazeTitle', { myName: d.myName || t('generate.he'), herName: d.herName || t('generate.she') }),
         createdAt: today,
         artStyle: d.artStyle || 'watercolor',
         version: '1.0.0',
@@ -109,6 +125,129 @@ export class ConfigGenerator {
   }
 
   /**
+   * Edit flow — reuse the stored config and wizard edits without calling the LLM.
+   * Existing multi-hotspot content is preserved unless a new scene needs local defaults.
+   */
+  _generateEditedConfig(d, { today, characters, puzzleKeys, memories, puzzles }) {
+    const existing = this._cloneConfig(d.existingConfig || {});
+    const existingLevels = Array.isArray(existing.levels) ? existing.levels : [];
+    const music = this.buildSceneMusic(d);
+
+    const levels = memories.map((memory, index) => {
+      const existingLevel = memory.existingLevel || existingLevels[index] || {};
+      const puzzle = puzzles[index] || { type: 'trivia', question: '', answer: '', hint: '' };
+      const interactives = this._mergeEditedInteractives(existingLevel, memory, puzzle, index);
+
+      return {
+        ...existingLevel,
+        id: index + 1,
+        title: memory.title || existingLevel.title || t('game.chapter', { n: index + 1 }),
+        background: (memory.photos && memory.photos[0]) || existingLevel.background || '',
+        photos: memory.photos || existingLevel.photos || [],
+        music,
+        description: memory.description || existingLevel.description || '',
+        date: memory.date || existingLevel.date || '',
+        location: memory.location || existingLevel.location || '',
+        people: memory.people || existingLevel.people || '',
+        dialogue: memory.dialogue || existingLevel.dialogue || '',
+        soundtrack: memory.soundtrack || existingLevel.soundtrack || '',
+        interactives,
+      };
+    });
+
+    const mazeId = d.editMazeId || existing.meta?.mazeId || '';
+    const previousFinale = existing.finale || {};
+    const loveLetter = d.loveLetter || previousFinale.loveLetter || t('generate.defaultLoveLetter', { name: d.herName || t('generate.you') });
+
+    return {
+      ...existing,
+      meta: {
+        ...(existing.meta || {}),
+        title: t('generate.mazeTitle', { myName: d.myName || t('generate.he'), herName: d.herName || t('generate.she') }),
+        createdAt: existing.meta?.createdAt || today,
+        updatedAt: today,
+        artStyle: d.artStyle || existing.meta?.artStyle || 'watercolor',
+        version: existing.meta?.version || '1.0.0',
+        mazeId,
+      },
+      characters,
+      puzzleKeys,
+      levels,
+      finale: {
+        ...previousFinale,
+        hasVideo: !!(d.confessionVideoUrl || d.confessionVideo),
+        videoUrl: d.confessionVideoUrl || '',
+        videoName: d.confessionVideoName || '',
+        loveLetter,
+        bgm: d.bgm || previousFinale.bgm || 'romantic-piano',
+      },
+    };
+  }
+
+  _mergeEditedInteractives(existingLevel, memory, puzzle, sceneIndex) {
+    const existingInteractives = Array.isArray(existingLevel?.interactives)
+      ? existingLevel.interactives
+      : [];
+
+    if (existingInteractives.length === 0) {
+      return this.buildMultipleInteractives({ memory, puzzle, sceneIndex });
+    }
+
+    let puzzleUpdated = false;
+    const updated = existingInteractives.map((item, index) => {
+      if (item?.puzzle && !puzzleUpdated) {
+        puzzleUpdated = true;
+        return this._updatePuzzleInteractive(item, puzzle, sceneIndex);
+      }
+
+      if (item?.type === 'memory') {
+        return {
+          ...item,
+          memoryText: item.memoryText || item.memory_text || this.getFallbackMemoryText(memory, index),
+        };
+      }
+
+      return item;
+    });
+
+    if (!puzzleUpdated && (puzzle?.question || puzzle?.answer || puzzle?.type === 'password')) {
+      updated.unshift(this._updatePuzzleInteractive(this.buildInteractive(puzzle, sceneIndex), puzzle, sceneIndex));
+    }
+
+    return updated.slice(0, 5);
+  }
+
+  _updatePuzzleInteractive(item, puzzle, sceneIndex) {
+    const nextType = puzzle.type || item?.puzzle?.type || item?.type || 'trivia';
+    const icons = {
+      trivia: '❓',
+      password: '🔐',
+      hidden: '🔍',
+    };
+
+    return {
+      ...item,
+      id: item.id || `scene-${sceneIndex + 1}-puzzle`,
+      type: nextType,
+      icon: item.icon || icons[nextType] || '✨',
+      puzzle: {
+        ...(item.puzzle || {}),
+        type: nextType,
+        question: puzzle.question || item?.puzzle?.question || '',
+        answer: puzzle.answer || item?.puzzle?.answer || '',
+        hint: puzzle.hint || item?.puzzle?.hint || '',
+      },
+    };
+  }
+
+  _cloneConfig(config) {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(config);
+    }
+    return JSON.parse(JSON.stringify(config));
+  }
+
+  /**
    * AI-powered scene generation — calls ChatGPT 5.5 for each scene.
    */
   async _generateWithAI(memories, puzzles, d, characters, totalSteps) {
@@ -119,7 +258,7 @@ export class ConfigGenerator {
       const userPuzzle = puzzles[i];
       const sceneName = memory.title || `场景 ${i + 1}`;
 
-      this.onProgress(i, totalSteps, `正在让 AI 分析「${sceneName}」...`);
+      this.onProgress(i, totalSteps, t('generate.aiAnalyzeScene', { sceneName }));
 
       try {
         const aiResult = await this.aiService.generateScene(
@@ -141,7 +280,7 @@ export class ConfigGenerator {
 
         levels.push({
           id: i + 1,
-          title: aiResult.title || memory.title || `第 ${i + 1} 章`,
+          title: aiResult.title || memory.title || t('game.chapter', { n: i + 1 }),
           background: (memory.photos && memory.photos[0]) || '',
           photos: memory.photos || [],
           music: this.buildSceneMusic(d),
@@ -151,7 +290,7 @@ export class ConfigGenerator {
           mood: aiResult.mood || '温馨',
           color_palette: aiResult.color_palette || [],
           interactives,
-          memory_shard_text: aiResult.memory_shard_text || '✨ 你找到了一段珍贵的记忆碎片',
+          memory_shard_text: aiResult.memory_shard_text || t('generate.foundShard'),
         });
       } catch (err) {
         console.warn(`AI generation failed for scene ${i + 1}, using fallback:`, err.message);
@@ -159,7 +298,7 @@ export class ConfigGenerator {
         const puzzle = userPuzzle || { type: 'trivia', question: '', answer: '', hint: '' };
         levels.push({
           id: i + 1,
-          title: memory.title || `第 ${i + 1} 章`,
+          title: memory.title || t('game.chapter', { n: i + 1 }),
           background: (memory.photos && memory.photos[0]) || '',
           photos: memory.photos || [],
           music: this.buildSceneMusic(d),
@@ -182,7 +321,7 @@ export class ConfigGenerator {
 
       return {
         id: index + 1,
-        title: memory.title || `第 ${index + 1} 章`,
+        title: memory.title || t('game.chapter', { n: index + 1 }),
         background: (memory.photos && memory.photos[0]) || '',
         photos: memory.photos || [],
         music: this.buildSceneMusic(d),
@@ -232,13 +371,13 @@ export class ConfigGenerator {
       position: pos,
       puzzle: {
         type: puzzle.type,
-        question: puzzle.question || '你还记得吗？',
+        question: puzzle.question || t('generate.remember'),
         answer: puzzle.answer || '',
-        hint: puzzle.hint || '想想我们的回忆...',
+        hint: puzzle.hint || t('generate.thinkMemory'),
       },
       reward: {
         type: 'memory_shard',
-        text: puzzle.type === 'hidden' ? (puzzle.answer || '你找到了一段珍贵的记忆碎片') : '✨ 解锁成功！你找到了一段珍贵的记忆碎片',
+        text: puzzle.type === 'hidden' ? (puzzle.answer || t('generate.foundShardHidden')) : t('generate.unlockedShard'),
       },
     };
   }
@@ -253,11 +392,11 @@ export class ConfigGenerator {
     if (puzzle?.question || puzzle?.answer || puzzle?.type === 'password') {
       const puzzleInteractive = this.buildInteractive(puzzle, sceneIndex);
       puzzleInteractive.id = `scene-${sceneIndex + 1}-puzzle`;
-      puzzleInteractive.title = puzzle.type === 'password' ? '记忆密码' : '心动问题';
-      puzzleInteractive.memoryText = memory.description || puzzle.reward?.text || '这道题的答案，藏在你们共同经历过的那一天里。';
+      puzzleInteractive.title = puzzle.type === 'password' ? t('generate.passwordTitle') : t('generate.questionTitle');
+      puzzleInteractive.memoryText = memory.description || puzzle.reward?.text || t('generate.puzzleDesc');
       puzzleInteractive.reward = {
         ...puzzleInteractive.reward,
-        text: puzzleInteractive.reward?.text || '✨ 你解开了一段重要记忆',
+        text: puzzleInteractive.reward?.text || t('generate.unlockedImportant'),
       };
       interactives.unshift(puzzleInteractive);
     }
@@ -274,7 +413,7 @@ export class ConfigGenerator {
       { x: 0.25, y: 0.64 },
     ];
     const pos = this.normalizePosition(point?.position) || fallbackPositions[idx % fallbackPositions.length];
-    const title = point?.title || ['细节一角', '熟悉物件', '那一瞬间', '藏起的话', '光里的回忆'][idx % 5];
+    const title = point?.title || [t('generate.hotspotTitle0'), t('generate.hotspotTitle1'), t('generate.hotspotTitle2'), t('generate.hotspotTitle3'), t('generate.hotspotTitle4')][idx % 5];
     const memoryText = point?.memory_text || point?.memoryText || this.getFallbackMemoryText(memory, idx);
 
     return {
@@ -286,7 +425,7 @@ export class ConfigGenerator {
       memoryText,
       reward: {
         type: 'memory_shard',
-        text: point?.reward_text || point?.rewardText || `✨ 你发现了「${title}」里的记忆`,
+        text: point?.reward_text || point?.rewardText || t('generate.foundHotspot', { title }),
       },
     };
   }
@@ -306,41 +445,41 @@ export class ConfigGenerator {
     const hotspots = [];
     if (memory.location) {
       hotspots.push({
-        title: '熟悉的地点',
+        title: t('generate.hotspotLocationTitle'),
         icon: '📍',
-        memory_text: `这里是${memory.location}。有些地方之所以特别，不是因为它多么耀眼，而是因为那天你在那里。`,
+        memory_text: t('generate.hotspotLocationText', { location: memory.location }),
       });
     }
     if (memory.dialogue) {
       hotspots.push({
-        title: '那句对白',
+        title: t('generate.hotspotDialogueTitle'),
         icon: '💬',
-        memory_text: `我一直记得那句话：${memory.dialogue}。后来想起它，还是会觉得那一刻很轻，也很珍贵。`,
+        memory_text: t('generate.hotspotDialogueText', { dialogue: memory.dialogue }),
       });
     }
     if (memory.soundtrack) {
       hotspots.push({
-        title: '当时的歌',
+        title: t('generate.hotspotMusicTitle'),
         icon: '🎵',
-        memory_text: `如果这段回忆有背景音乐，那一定是《${memory.soundtrack}》。旋律响起时，那天的画面好像又回来了。`,
+        memory_text: t('generate.hotspotMusicText', { soundtrack: memory.soundtrack }),
       });
     }
     hotspots.push({
-      title: memory.title || '这一幕',
+      title: memory.title || t('generate.hotspotSceneTitle'),
       icon: '✨',
-      memory_text: memory.description || '这是一段被小心保存下来的回忆，里面有当时的光、心跳，以及想再靠近一点的我。',
+      memory_text: memory.description || t('generate.hotspotSceneText'),
     });
     hotspots.push({
-      title: '没说出口的话',
+      title: t('generate.hotspotUnsaidTitle'),
       icon: '💌',
-      memory_text: '有些话当时没有说得完整，所以我把它藏进这个小游戏里。希望你点开的时候，能听见我心里的认真。',
+      memory_text: t('generate.hotspotUnsaidText'),
     });
     return hotspots.slice(0, 4);
   }
 
   getFallbackMemoryText(memory, idx) {
     const fallbacks = this.getLocalHotspots(memory);
-    return fallbacks[idx % fallbacks.length]?.memory_text || memory.description || '这是一段属于我们的珍贵回忆...';
+    return fallbacks[idx % fallbacks.length]?.memory_text || memory.description || t('generate.preciousMemory');
   }
 
   buildSceneMusic(d) {
@@ -352,7 +491,7 @@ export class ConfigGenerator {
   }
 
   enhanceDescription(desc, herName) {
-    if (!desc) return '这是一段属于我们的珍贵回忆...';
+    if (!desc) return t('generate.preciousMemory');
     return desc;
   }
 
@@ -361,10 +500,10 @@ export class ConfigGenerator {
     return [
       {
         id: 1,
-        title: '初遇 · 图书馆',
+        title: t('generate.demo1Title'),
         background: '',
         photos: [],
-        description: `还记得那个午后吗？阳光从图书馆的大窗户洒进来，你正低头看书。那是我第一次见到你，${name}。`,
+        description: t('generate.demo1Desc', { name }),
         date: '',
         interactives: [{
           type: 'trivia',
@@ -372,19 +511,19 @@ export class ConfigGenerator {
           position: { x: 0.6, y: 0.5 },
           puzzle: {
             type: 'trivia',
-            question: '你还记得那天我借给你的第一本书叫什么吗？',
-            answer: '小王子',
-            hint: '一个住在很小星球上的小男孩...',
+            question: t('generate.demo1Q'),
+            answer: t('generate.demo1A'),
+            hint: t('generate.demo1Hint'),
           },
-          reward: { type: 'memory_shard', text: '✨ 你找到了第一片记忆碎片！' },
+          reward: { type: 'memory_shard', text: t('generate.demo1Reward') },
         }],
       },
       {
         id: 2,
-        title: '约会 · 游乐园',
+        title: t('generate.demo2Title'),
         background: '',
         photos: [],
-        description: '我们第一次约会去了游乐园。你说你恐高，却陪我坐了摩天轮。在最高处，整个城市的灯光在你眼里闪烁。',
+        description: t('generate.demo2Desc'),
         date: '',
         interactives: [{
           type: 'password',
@@ -392,19 +531,19 @@ export class ConfigGenerator {
           position: { x: 0.5, y: 0.55 },
           puzzle: {
             type: 'password',
-            question: '输入我们的纪念日密码',
-            answer: '0520',
-            hint: '那个我们在一起的特别日子...',
+            question: t('generate.demo2Q'),
+            answer: t('generate.demo2A'),
+            hint: t('generate.demo2Hint'),
           },
-          reward: { type: 'memory_shard', text: '✨ 又一片记忆碎片被唤醒！' },
+          reward: { type: 'memory_shard', text: t('generate.demo2Reward') },
         }],
       },
       {
         id: 3,
-        title: '日常 · 我们的厨房',
+        title: t('generate.demo3Title'),
         background: '',
         photos: [],
-        description: '你第一次为我做饭，煎蛋焦了，面条软了，但那是我吃过最好吃的一顿饭。因为满满的都是你的心意。',
+        description: t('generate.demo3Desc'),
         date: '',
         interactives: [{
           type: 'hidden',
@@ -412,11 +551,11 @@ export class ConfigGenerator {
           position: { x: 0.4, y: 0.45 },
           puzzle: {
             type: 'hidden',
-            question: '找到藏在场景中的发光日记本',
-            answer: '翻开日记本，里面夹着一张你写的便条：\"今天给你做了早餐，希望你喜欢 ❤️\"',
-            hint: '仔细看看角落里是否有什么在闪光...',
+            question: t('generate.demo3Q'),
+            answer: t('generate.demo3A'),
+            hint: t('generate.demo3Hint'),
           },
-          reward: { type: 'memory_shard', text: '✨ 最后一片记忆碎片！所有回忆已完整拼合！' },
+          reward: { type: 'memory_shard', text: t('generate.demo3Reward') },
         }],
       },
     ];

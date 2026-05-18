@@ -14,12 +14,13 @@ export class Step5Puzzles {
     
     // Initialize puzzles array if empty
     if (!this.wizard.data.puzzles || this.wizard.data.puzzles.length !== memories.length) {
+      const existingPuzzles = this.wizard.data.puzzles || [];
       this.wizard.data.puzzles = memories.map((m, i) => ({
         memoryIndex: i,
-        type: i === 0 ? 'trivia' : (i === 1 ? 'password' : 'hidden'),
-        question: '',
-        answer: '',
-        hint: '',
+        type: existingPuzzles[i]?.type || (i === 0 ? 'trivia' : (i === 1 ? 'password' : 'hidden')),
+        question: existingPuzzles[i]?.question || '',
+        answer: existingPuzzles[i]?.answer || '',
+        hint: existingPuzzles[i]?.hint || '',
       }));
     }
 

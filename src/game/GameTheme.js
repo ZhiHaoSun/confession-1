@@ -1,0 +1,28 @@
+export const GAME_THEME = {
+  hex: {
+    pageBg: '#fff4ed',
+    ink: '#4a2330',
+    softInk: 'rgba(74, 35, 48, 0.72)',
+    mutedInk: 'rgba(74, 35, 48, 0.5)',
+    cream: '#fffaf6',
+    blush: '#ffe8e6',
+    accent: '#d85c72',
+    peach: '#f2a77a',
+    gold: '#d9983f',
+    white: '#ffffff',
+  },
+  int: {
+    pageBg: 0xfff4ed,
+    blush: 0xffe8e6,
+    cream: 0xfffaf6,
+    panel: 0xfffbf7,
+    panelWarm: 0xffeee9,
+    ink: 0x4a2330,
+    accent: 0xd85c72,
+    peach: 0xf2a77a,
+    gold: 0xd9983f,
+    rose: 0xe99aaa,
+    white: 0xffffff,
+  },
+  fade: [255, 244, 237],
+};

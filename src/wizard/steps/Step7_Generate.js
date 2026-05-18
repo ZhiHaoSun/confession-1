@@ -25,7 +25,7 @@ export class Step7Generate {
   showGenerating(container) {
     const memories = this.wizard.data.memories || [];
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    const useAI = !!apiKey;
+    const useAI = !!apiKey && !this.wizard.data.editMode;
     const sceneCount = memories.filter(m => m.title || m.description || (m.photos && m.photos.length > 0)).length || 1;
 
     container.innerHTML = `
@@ -191,7 +191,7 @@ export class Step7Generate {
     const configBlob = new Blob([configStr], { type: 'application/json' });
     const configUrl = URL.createObjectURL(configBlob);
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    const useAI = !!apiKey;
+    const useAI = !!apiKey && !this.wizard.data.editMode;
     const saveResult = this.saveConfigForPreview(configStr);
     const saveWarning = saveResult.ok ? '' : `
       <div class="glass-card mt-lg" style="text-align: left; border-color: rgba(248, 113, 113, 0.35);">
@@ -317,18 +317,18 @@ export class Step7Generate {
     };
 
     try {
-      onStatus?.('正在把迷宫配置上传到 Google Cloud...');
+      onStatus?.(t('generate.uploadingCloud'));
       config.meta.configUploaded = true;
       const upload = await MediaUploader.uploadJson(config, {
         fileName: `${mazeId}.json`,
         objectName: `memorymaze/configs/${mazeId}.json`,
       });
       config.meta.configUrl = upload.url;
-      onStatus?.('迷宫配置已上传');
+      onStatus?.(t('generate.uploadCloudDone'));
     } catch (err) {
       config.meta.configUploadError = err.message || 'Maze config upload failed';
       config.meta.configUploaded = false;
-      onStatus?.('云端配置上传失败，仍可下载本地 config.json');
+      onStatus?.(t('generate.uploadCloudFail'));
     }
   }
 

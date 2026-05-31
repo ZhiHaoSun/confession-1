@@ -16,6 +16,8 @@ export class PuzzleScene extends Phaser.Scene {
     this.rewardData = data.reward;
     this.levelIndex = data.levelIndex;
     this.itemIndex = data.itemIndex;
+    this.narrationAudio = null;
+    this.musicDucked = false;
   }
 
   create() {
@@ -28,6 +30,7 @@ export class PuzzleScene extends Phaser.Scene {
     // Puzzle container position
     const cx = width / 2;
     const cy = height / 2;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopNarration());
 
     switch (this.puzzleData.type) {
       case 'trivia':
@@ -61,8 +64,10 @@ export class PuzzleScene extends Phaser.Scene {
     const puzzle = this.puzzleData;
 
     // Card background
-    const card = this.add.rectangle(cx, cy, Math.min(w * 0.75, 500), 320, GAME_THEME.int.panel, 0.97);
+    const cardW = Math.min(w * 0.75, 500);
+    const card = this.add.rectangle(cx, cy, cardW, 320, GAME_THEME.int.panel, 0.97);
     card.setStrokeStyle(1, GAME_THEME.int.accent, 0.25);
+    this.createNarrationButton(puzzle.narrationUrl, cx + cardW / 2 - 62, cy - 130);
 
     // Question icon
     this.add.text(cx, cy - 120, '❓', { fontSize: '36px' }).setOrigin(0.5);
@@ -181,8 +186,10 @@ export class PuzzleScene extends Phaser.Scene {
     const puzzle = this.puzzleData;
 
     // Card background
-    const card = this.add.rectangle(cx, cy, Math.min(w * 0.7, 420), 400, GAME_THEME.int.panel, 0.97);
+    const cardW = Math.min(w * 0.7, 420);
+    const card = this.add.rectangle(cx, cy, cardW, 400, GAME_THEME.int.panel, 0.97);
     card.setStrokeStyle(1, GAME_THEME.int.accent, 0.25);
+    this.createNarrationButton(puzzle.narrationUrl, cx + cardW / 2 - 62, cy - 168);
 
     // Lock icon
     this.add.text(cx, cy - 160, '🔐', { fontSize: '40px' }).setOrigin(0.5);
@@ -295,8 +302,10 @@ export class PuzzleScene extends Phaser.Scene {
     const puzzle = this.puzzleData;
 
     // Card background
-    const card = this.add.rectangle(cx, cy, Math.min(w * 0.7, 450), 280, GAME_THEME.int.panel, 0.97);
+    const cardW = Math.min(w * 0.7, 450);
+    const card = this.add.rectangle(cx, cy, cardW, 280, GAME_THEME.int.panel, 0.97);
     card.setStrokeStyle(1, GAME_THEME.int.accent, 0.25);
+    this.createNarrationButton(puzzle.narrationUrl, cx + cardW / 2 - 62, cy - 108);
 
     // Icon
     this.add.text(cx, cy - 100, '🔍', { fontSize: '40px' }).setOrigin(0.5);
@@ -458,7 +467,63 @@ export class PuzzleScene extends Phaser.Scene {
     });
   }
 
+  createNarrationButton(url, x, y) {
+    if (!url) return;
+
+    const bg = this.add.rectangle(x, y, 108, 30, GAME_THEME.int.blush, 0.95)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.28)
+      .setInteractive({ useHandCursor: true });
+    const label = this.add.text(x, y, `🔊 ${t('game.aiNarrationShort')}`, {
+      fontFamily: '"Inter", sans-serif',
+      fontSize: '11px',
+      color: GAME_THEME.hex.accent,
+    }).setOrigin(0.5);
+
+    bg.on('pointerdown', () => this.toggleNarration(url, label));
+  }
+
+  toggleNarration(url, label) {
+    if (this.narrationAudio && !this.narrationAudio.paused) {
+      this.stopNarration();
+      label.setText(`🔊 ${t('game.aiNarrationShort')}`);
+      return;
+    }
+
+    const levelScene = this.scene.get('LevelScene');
+    levelScene?.setNarrationDucking(true);
+    this.musicDucked = true;
+
+    this.narrationAudio = new Audio(url);
+    this.narrationAudio.volume = 1;
+    label.setText(`⏸ ${t('game.aiNarrationShort')}`);
+    this.narrationAudio.addEventListener('ended', () => {
+      label.setText(`🔊 ${t('game.aiNarrationShort')}`);
+      this.stopNarration();
+    }, { once: true });
+    this.narrationAudio.play().catch(() => {
+      label.setText(t('game.narrationPlayFailed'));
+      this.stopNarration();
+      this.time.delayedCall(2400, () => {
+        if (label.active) label.setText(`🔊 ${t('game.aiNarrationShort')}`);
+      });
+    });
+  }
+
+  stopNarration() {
+    if (this.narrationAudio) {
+      this.narrationAudio.pause();
+      this.narrationAudio.src = '';
+      this.narrationAudio = null;
+    }
+
+    if (this.musicDucked) {
+      this.scene.get('LevelScene')?.setNarrationDucking(false);
+      this.musicDucked = false;
+    }
+  }
+
   closePuzzle(solved) {
+    this.stopNarration();
     // Remove the native HTML input if it exists
     if (this._htmlInput && this._htmlInput.parentElement) {
       this._htmlInput.remove();

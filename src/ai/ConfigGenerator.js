@@ -43,8 +43,16 @@ export class ConfigGenerator {
     }
 
     const characters = {
-      creator: { name: d.myName || t('generate.he') },
-      receiver: { name: d.herName || t('generate.she') },
+      creator: {
+        name: d.myName || t('generate.he'),
+        portraitUrl: d.creatorPortraitUrl || '',
+        portraitName: d.creatorPortraitName || '',
+      },
+      receiver: {
+        name: d.herName || t('generate.she'),
+        portraitUrl: d.receiverPortraitUrl || '',
+        portraitName: d.receiverPortraitName || '',
+      },
     };
 
     // Build levels from memories
@@ -107,7 +115,7 @@ export class ConfigGenerator {
       meta: {
         title: t('generate.mazeTitle', { myName: d.myName || t('generate.he'), herName: d.herName || t('generate.she') }),
         createdAt: today,
-        artStyle: d.artStyle || 'watercolor',
+        artStyle: d.artStyle || 'romantic-manga',
         version: '1.0.0',
         openingText,
       },
@@ -121,6 +129,7 @@ export class ConfigGenerator {
         loveLetter,
         bgm: d.bgm || 'romantic-piano',
       },
+      narration: this.buildNarrationSettings(d),
     };
   }
 
@@ -137,12 +146,15 @@ export class ConfigGenerator {
       const existingLevel = memory.existingLevel || existingLevels[index] || {};
       const puzzle = puzzles[index] || { type: 'trivia', question: '', answer: '', hint: '' };
       const interactives = this._mergeEditedInteractives(existingLevel, memory, puzzle, index);
+      const challenge = this.buildLevelChallenge(memory, puzzle, index, existingLevel.challenge);
 
       return {
         ...existingLevel,
         id: index + 1,
         title: memory.title || existingLevel.title || t('game.chapter', { n: index + 1 }),
-        background: (memory.photos && memory.photos[0]) || existingLevel.background || '',
+        background: existingLevel.artwork?.status === 'generated'
+          ? (existingLevel.background || existingLevel.artwork.url || '')
+          : ((memory.photos && memory.photos[0]) || existingLevel.background || ''),
         photos: memory.photos || existingLevel.photos || [],
         music,
         description: memory.description || existingLevel.description || '',
@@ -151,6 +163,7 @@ export class ConfigGenerator {
         people: memory.people || existingLevel.people || '',
         dialogue: memory.dialogue || existingLevel.dialogue || '',
         soundtrack: memory.soundtrack || existingLevel.soundtrack || '',
+        challenge,
         interactives,
       };
     });
@@ -166,7 +179,7 @@ export class ConfigGenerator {
         title: t('generate.mazeTitle', { myName: d.myName || t('generate.he'), herName: d.herName || t('generate.she') }),
         createdAt: existing.meta?.createdAt || today,
         updatedAt: today,
-        artStyle: d.artStyle || existing.meta?.artStyle || 'watercolor',
+        artStyle: d.artStyle || existing.meta?.artStyle || 'romantic-manga',
         version: existing.meta?.version || '1.0.0',
         mazeId,
       },
@@ -181,6 +194,10 @@ export class ConfigGenerator {
         loveLetter,
         bgm: d.bgm || previousFinale.bgm || 'romantic-piano',
       },
+      narration: {
+        ...(existing.narration || {}),
+        ...this.buildNarrationSettings(d),
+      },
     };
   }
 
@@ -188,6 +205,10 @@ export class ConfigGenerator {
     const existingInteractives = Array.isArray(existingLevel?.interactives)
       ? existingLevel.interactives
       : [];
+
+    if (this.isJigsawPuzzle(puzzle)) {
+      return [];
+    }
 
     if (existingInteractives.length === 0) {
       return this.buildMultipleInteractives({ memory, puzzle, sceneIndex });
@@ -223,6 +244,7 @@ export class ConfigGenerator {
       trivia: '❓',
       password: '🔐',
       hidden: '🔍',
+      jigsaw: '🧩',
     };
 
     return {
@@ -263,7 +285,7 @@ export class ConfigGenerator {
       try {
         const aiResult = await this.aiService.generateScene(
           memory,
-          d.artStyle || 'watercolor',
+          d.artStyle || 'romantic-manga',
           characters,
           i,
           memories.length
@@ -277,6 +299,7 @@ export class ConfigGenerator {
           puzzle,
           sceneIndex: i,
         });
+        const challenge = this.buildLevelChallenge(memory, puzzle, i);
 
         levels.push({
           id: i + 1,
@@ -287,8 +310,13 @@ export class ConfigGenerator {
           description: aiResult.narrative || memory.description || '',
           scene_description: aiResult.scene_description || '',
           date: memory.date || '',
+          location: memory.location || '',
+          people: memory.people || '',
+          dialogue: memory.dialogue || '',
+          soundtrack: memory.soundtrack || '',
           mood: aiResult.mood || '温馨',
           color_palette: aiResult.color_palette || [],
+          challenge,
           interactives,
           memory_shard_text: aiResult.memory_shard_text || t('generate.foundShard'),
         });
@@ -304,6 +332,11 @@ export class ConfigGenerator {
           music: this.buildSceneMusic(d),
           description: this.enhanceDescription(memory.description, d.herName),
           date: memory.date || '',
+          location: memory.location || '',
+          people: memory.people || '',
+          dialogue: memory.dialogue || '',
+          soundtrack: memory.soundtrack || '',
+          challenge: this.buildLevelChallenge(memory, puzzle, i),
           interactives: this.buildMultipleInteractives({ memory, puzzle, sceneIndex: i }),
         });
       }
@@ -327,6 +360,11 @@ export class ConfigGenerator {
         music: this.buildSceneMusic(d),
         description: this.enhanceDescription(memory.description, d.herName),
         date: memory.date || '',
+        location: memory.location || '',
+        people: memory.people || '',
+        dialogue: memory.dialogue || '',
+        soundtrack: memory.soundtrack || '',
+        challenge: this.buildLevelChallenge(memory, puzzle, index),
         interactives: this.buildMultipleInteractives({ memory, puzzle, sceneIndex: index }),
       };
     });
@@ -363,6 +401,7 @@ export class ConfigGenerator {
       trivia: '📖',
       password: '🔐',
       hidden: '🔍',
+      jigsaw: '🧩',
     };
 
     return {
@@ -383,6 +422,10 @@ export class ConfigGenerator {
   }
 
   buildMultipleInteractives({ aiInteractives, memory, puzzle, sceneIndex }) {
+    if (this.isJigsawPuzzle(puzzle)) {
+      return [];
+    }
+
     const points = Array.isArray(aiInteractives) && aiInteractives.length > 0
       ? aiInteractives.slice(0, 5)
       : this.getLocalHotspots(memory);
@@ -402,6 +445,26 @@ export class ConfigGenerator {
     }
 
     return interactives.slice(0, 5);
+  }
+
+  isJigsawPuzzle(puzzle) {
+    return puzzle?.type === 'jigsaw';
+  }
+
+  buildLevelChallenge(memory, puzzle, sceneIndex, existingChallenge = null) {
+    if (!this.isJigsawPuzzle(puzzle)) return null;
+
+    return {
+      ...(existingChallenge || {}),
+      type: 'jigsaw',
+      rows: 3,
+      cols: 3,
+      pieces: 9,
+      source: 'background',
+      prompt: puzzle.question || existingChallenge?.prompt || t('game.jigsawPrompt'),
+      completionText: memory.description || existingChallenge?.completionText || t('generate.foundShard'),
+      id: existingChallenge?.id || `scene-${sceneIndex + 1}-jigsaw`,
+    };
   }
 
   buildMemoryInteractive(point, idx, sceneIndex, memory) {
@@ -487,6 +550,17 @@ export class ConfigGenerator {
       title: d.globalSceneMusicTitle || '',
       url: d.globalSceneMusicUrl || '',
       fileName: d.globalSceneMusicName || '',
+    };
+  }
+
+  buildNarrationSettings(d) {
+    return {
+      enabled: !!d.voiceNarrationEnabled,
+      voiceSampleUrl: d.creatorVoiceSampleUrl || '',
+      voiceSampleName: d.creatorVoiceSampleName || '',
+      provider: 'openai',
+      model: 'gpt-4o-mini-tts',
+      disclosureRequired: true,
     };
   }
 

@@ -5,7 +5,6 @@
 import { Step1Welcome } from './steps/Step1_Welcome.js';
 import { Step2CoreData } from './steps/Step2_CoreData.js';
 import { Step3Memories } from './steps/Step3_Memories.js';
-import { Step4ArtStyle } from './steps/Step4_ArtStyle.js';
 import { Step5Puzzles } from './steps/Step5_Puzzles.js';
 import { Step6Finale } from './steps/Step6_Finale.js';
 import { Step7Generate } from './steps/Step7_Generate.js';
@@ -16,8 +15,8 @@ const STORAGE_KEY = 'memorymaze_wizard_data';
 export class WizardController {
   constructor(appEl) {
     this.app = appEl;
-    this.currentStep = 0; // 0 = welcome, 1-6 = wizard steps
-    this.totalSteps = 7;
+    this.currentStep = 0; // 0 = welcome, 1-5 = creation steps
+    this.totalSteps = 6;
     this.data = this.loadSavedData();
     this.steps = [];
     this.headerEl = null;
@@ -27,7 +26,11 @@ export class WizardController {
   loadSavedData() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (!data.editMode) data.artStyle = 'romantic-manga';
+        return data;
+      }
     } catch (e) { /* ignore */ }
     return this.createDefaultData();
   }
@@ -39,8 +42,12 @@ export class WizardController {
       anniversary: '',
       nickname: '',
       myName: '',
+      creatorPortraitUrl: '',
+      creatorPortraitName: '',
+      receiverPortraitUrl: '',
+      receiverPortraitName: '',
       memories: [],
-      artStyle: 'watercolor',
+      artStyle: 'romantic-manga',
       puzzles: [],
       confessionVideo: null,
       confessionVideoUrl: '',
@@ -50,6 +57,9 @@ export class WizardController {
       globalSceneMusicName: '',
       bgm: 'romantic-piano',
       loveLetter: '',
+      voiceNarrationEnabled: true,
+      creatorVoiceSampleUrl: '',
+      creatorVoiceSampleName: '',
     };
   }
 
@@ -74,7 +84,6 @@ export class WizardController {
       new Step1Welcome(this),
       new Step2CoreData(this),
       new Step3Memories(this),
-      new Step4ArtStyle(this),
       new Step5Puzzles(this),
       new Step6Finale(this),
       new Step7Generate(this),
@@ -122,6 +131,16 @@ export class WizardController {
     }));
 
     const puzzles = levels.map((level, index) => {
+      if (level.challenge?.type === 'jigsaw') {
+        return {
+          memoryIndex: index,
+          type: 'jigsaw',
+          question: level.challenge.prompt || '',
+          answer: '',
+          hint: '',
+        };
+      }
+
       const puzzleInteractive = (level.interactives || []).find(item => item?.puzzle) || {};
       const puzzle = puzzleInteractive.puzzle || {};
       return {
@@ -137,11 +156,18 @@ export class WizardController {
       ...defaults,
       myName: creator.name || '',
       herName: receiver.name || '',
+      creatorPortraitUrl: creator.portraitUrl || '',
+      creatorPortraitName: creator.portraitName || '',
+      receiverPortraitUrl: receiver.portraitUrl || '',
+      receiverPortraitName: receiver.portraitName || '',
       artStyle: config?.meta?.artStyle || defaults.artStyle,
       memories,
       puzzles,
       confessionVideoUrl: finale.videoUrl || '',
       confessionVideoName: finale.videoName || '',
+      voiceNarrationEnabled: !!config?.narration?.enabled,
+      creatorVoiceSampleUrl: config?.narration?.voiceSampleUrl || '',
+      creatorVoiceSampleName: config?.narration?.voiceSampleName || '',
       globalSceneMusicTitle: firstMusic.title || '',
       globalSceneMusicUrl: firstMusic.url || '',
       globalSceneMusicName: firstMusic.fileName || '',
@@ -199,9 +225,9 @@ export class WizardController {
     });
 
     const progressBar = header.querySelector('#progress-bar');
-    const stepLabels = ['📝', '📸', '🎨', '🧩', '💌', '✨'];
+    const stepLabels = ['📝', '📸', '🧩', '💌', '✨'];
     
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i < this.totalSteps; i++) {
       const dot = document.createElement('div');
       dot.className = 'progress-dot';
       if (i < this.currentStep) dot.classList.add('completed');
@@ -209,7 +235,7 @@ export class WizardController {
       dot.textContent = i < this.currentStep ? '✓' : stepLabels[i - 1];
       progressBar.appendChild(dot);
 
-      if (i < 6) {
+      if (i < this.totalSteps - 1) {
         const line = document.createElement('div');
         line.className = 'progress-line';
         if (i < this.currentStep) line.classList.add('completed');

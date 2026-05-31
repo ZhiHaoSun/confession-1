@@ -249,6 +249,106 @@
   grid-column: 1 / -1;
 }
 
+/* ---- Character Portrait References (Step 2) ---- */
+.portrait-reference-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-glass);
+}
+
+.portrait-reference-section h3 {
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  margin-bottom: var(--space-xs);
+}
+
+.portrait-reference-section > p:first-of-type {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-lg);
+}
+
+.portrait-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 180px));
+  gap: var(--space-md);
+}
+
+.portrait-upload {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-top: var(--space-xs);
+  border: 2px dashed var(--border-glass);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-glass);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.portrait-upload:hover {
+  border-color: var(--accent-rose);
+  background: rgba(232, 168, 124, 0.05);
+}
+
+.portrait-upload.has-image {
+  border-style: solid;
+  border-color: var(--accent-rose);
+}
+
+.portrait-upload img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portrait-upload input[type="file"] {
+  display: none;
+}
+
+.portrait-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(10, 14, 39, 0.7);
+  color: #fff;
+  cursor: pointer;
+}
+
+.portrait-file-name {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 8px;
+  background: rgba(10, 14, 39, 0.66);
+  color: #fff;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.portrait-reference-hint {
+  margin-top: var(--space-md);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+  .portrait-reference-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ---- Memory Cards (Step 3) ---- */
 .memory-cards {
   display: flex;
@@ -644,6 +744,11 @@
   gap: var(--space-xl);
 }
 
+.style-grid--single {
+  grid-template-columns: minmax(280px, 560px);
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .style-grid {
     grid-template-columns: 1fr;
@@ -718,6 +823,92 @@
   font-size: 0.85rem;
   color: var(--text-muted);
   line-height: 1.5;
+}
+
+/* ---- Generated Scene Artwork Review ---- */
+.artwork-gallery {
+  text-align: left;
+}
+
+.artwork-gallery-head h3 {
+  font-family: var(--font-serif);
+  font-size: 1.18rem;
+  margin-bottom: var(--space-xs);
+}
+
+.artwork-gallery-head p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-lg);
+}
+
+.artwork-scenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-md);
+}
+
+.artwork-scene-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.artwork-scene-image {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 232, 230, 0.18);
+  border: 1px solid var(--border-glass);
+}
+
+.artwork-scene-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.artwork-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.artwork-scene-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.artwork-scene-info strong {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.artwork-status {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+}
+
+.artwork-status.generated {
+  color: var(--accent-rose);
+}
+
+.artwork-regenerate {
+  align-self: flex-start;
+}
+
+.artwork-feedback {
+  min-height: 1.4em;
+  margin-top: var(--space-md);
+  color: var(--text-accent);
+  font-size: 0.88rem;
 }
 
 /* ---- Puzzle Config (Step 5) ---- */
@@ -1047,6 +1238,24 @@
   background: rgba(248, 113, 113, 0.1);
   color: var(--accent-coral);
   cursor: pointer;
+}
+
+.narration-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.narration-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-rose);
 }
 
 /* ---- Loading Overlay ---- */

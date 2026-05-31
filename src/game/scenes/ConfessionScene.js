@@ -6,6 +6,8 @@ export class ConfessionScene extends Phaser.Scene {
   constructor() {
     super({ key: 'ConfessionScene' });
     this.letterPanel = null;
+    this.letterAudio = null;
+    this.letterNarrationStatus = null;
   }
 
   create() {
@@ -13,7 +15,10 @@ export class ConfessionScene extends Phaser.Scene {
     const config = this.registry.get('gameConfig');
     const finale = config.finale || {};
     const cx = width / 2;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroyLetterPanel());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.destroyLetterPanel();
+      this.stopLetterNarration();
+    });
 
     this.cameras.main.fadeIn(1200, ...GAME_THEME.fade);
 
@@ -81,10 +86,10 @@ export class ConfessionScene extends Phaser.Scene {
     this.time.delayedCall(2500, () => {
       if (finale.hasVideo && finale.videoUrl) {
         this.showConfessionVideo(finale.videoUrl, () => {
-          this.showLoveLetter(finale.loveLetter, cx, width, height, config.characters);
+          this.showLoveLetter(finale.loveLetter, cx, width, height, config.characters, finale.narrationUrl);
         });
       } else {
-        this.showLoveLetter(finale.loveLetter, cx, width, height, config.characters);
+        this.showLoveLetter(finale.loveLetter, cx, width, height, config.characters, finale.narrationUrl);
       }
     });
   }
@@ -112,7 +117,7 @@ export class ConfessionScene extends Phaser.Scene {
     video.style.cssText = 'width: 100%; height: 100%; object-fit: contain; background: #000;';
 
     const continueBtn = document.createElement('button');
-    continueBtn.textContent = t('confession.continue');
+    continueBtn.textContent = t('game.continueToLetter');
     continueBtn.style.cssText = `
       position: absolute;
       right: 18px;
@@ -139,7 +144,7 @@ export class ConfessionScene extends Phaser.Scene {
     parent.appendChild(overlay);
 
     video.play().catch(() => {
-      continueBtn.textContent = t('confession.playOrContinue');
+      continueBtn.textContent = t('game.playOrContinue');
     });
   }
 
@@ -168,8 +173,8 @@ export class ConfessionScene extends Phaser.Scene {
     }
   }
 
-  showLoveLetter(letterText, cx, w, h, characters) {
-    const text = letterText || t('confession.defaultLetter');
+  showLoveLetter(letterText, cx, w, h, characters, narrationUrl) {
+    const text = letterText || t('game.defaultLetter');
     const receiverName = characters?.receiver?.name || t('generate.you');
     const creatorName = characters?.creator?.name || t('generate.me');
 
@@ -205,7 +210,7 @@ export class ConfessionScene extends Phaser.Scene {
       ease: 'Power2',
     });
 
-    const headerText = this.add.text(cx, letterY - h * 0.19, t('confession.dear', { name: receiverName }), {
+    const headerText = this.add.text(cx, letterY - h * 0.19, t('game.toLetter', { name: receiverName }), {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '18px',
       color: GAME_THEME.hex.accent,
@@ -232,13 +237,14 @@ export class ConfessionScene extends Phaser.Scene {
         width: maxTextWidth,
         height: h * 0.28,
       });
+      this.createLetterNarrationControls(narrationUrl, cx - cardW * 0.18, letterY + h * 0.22);
     });
 
     // Signature appears after the scrollable letter has settled in.
     const signatureDelay = 2200;
 
     this.time.delayedCall(signatureDelay, () => {
-      const signature = this.add.text(cx + cardW * 0.15, letterY + h * 0.2, t('confession.forever', { name: creatorName }), {
+      const signature = this.add.text(cx + cardW * 0.15, letterY + h * 0.2, t('game.foreverSigned', { name: creatorName }), {
         fontFamily: '"Caveat", cursive',
         fontSize: '20px',
         color: GAME_THEME.hex.accent,
@@ -287,7 +293,7 @@ export class ConfessionScene extends Phaser.Scene {
     parent.style.position = 'relative';
 
     const panel = document.createElement('div');
-    panel.textContent = text || t('confession.defaultLetter');
+    panel.textContent = text || t('game.defaultLetter');
     panel.style.cssText = `
       position: absolute;
       z-index: 12;
@@ -342,6 +348,61 @@ export class ConfessionScene extends Phaser.Scene {
     this.scale.off('resize', this.positionLetterPanel, this);
     this.letterPanel.el.remove();
     this.letterPanel = null;
+  }
+
+  createLetterNarrationControls(url, x, y) {
+    if (!url) return;
+
+    const btn = this.add.rectangle(x, y, 170, 38, GAME_THEME.int.accent, 1)
+      .setInteractive({ useHandCursor: true });
+    const label = this.add.text(x, y, `▶ ${t('game.playLoveLetter')}`, {
+      fontFamily: '"Noto Serif SC", serif',
+      fontSize: '13px',
+      color: GAME_THEME.hex.white,
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.letterNarrationStatus = this.add.text(x, y + 29, t('game.tapToHearLoveLetter'), {
+      fontFamily: '"Inter", sans-serif',
+      fontSize: '10px',
+      color: GAME_THEME.hex.mutedInk,
+    }).setOrigin(0.5);
+
+    btn.on('pointerdown', () => {
+      if (this.letterAudio && !this.letterAudio.paused) {
+        this.stopLetterNarration();
+        label.setText(`▶ ${t('game.playLoveLetter')}`);
+        this.letterNarrationStatus.setText(t('game.tapToHearLoveLetter'));
+        return;
+      }
+
+      this.playLetterNarration(url, label);
+    });
+  }
+
+  playLetterNarration(url, label) {
+    this.stopLetterNarration();
+    this.letterAudio = new Audio(url);
+    this.letterAudio.volume = 1;
+    label.setText(`⏸ ${t('game.stopLoveLetter')}`);
+    this.letterAudio.addEventListener('ended', () => {
+      label.setText(`▶ ${t('game.playLoveLetter')}`);
+      this.letterNarrationStatus?.setText(t('game.tapToHearLoveLetter'));
+      this.stopLetterNarration();
+    }, { once: true });
+    this.letterAudio.play().then(() => {
+      this.letterNarrationStatus?.setText(t('game.aiNarrationDisclosure'));
+    }).catch(() => {
+      label.setText(`▶ ${t('game.playLoveLetter')}`);
+      this.stopLetterNarration();
+      this.letterNarrationStatus?.setText(t('game.narrationPlayFailed'));
+    });
+  }
+
+  stopLetterNarration() {
+    if (!this.letterAudio) return;
+    this.letterAudio.pause();
+    this.letterAudio.src = '';
+    this.letterAudio = null;
   }
 
   startHeartRain(w, h) {

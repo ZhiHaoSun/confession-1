@@ -1,0 +1,42 @@
+{
+  "myName": "Bob",
+  "herName": "Alice",
+  "herBirthday": "2000-11-08",
+  "anniversary": "2024-05-20",
+  "nickname": "Bunny",
+  "memories": [
+    {
+      "title": "First Meeting",
+      "date": "2024-09-15",
+      "location": "Central Library",
+      "description": "We bumped into each other while reaching for the same book. You smiled and let me have it.",
+      "dialogue": "You: You can have it, I've read it a hundred times.\nMe: Oh, the Little Prince! It's my favorite too.",
+      "soundtrack": "Debussy - Clair de lune"
+    },
+    {
+      "title": "First Date",
+      "date": "2024-11-20",
+      "location": "Amusement Park",
+      "description": "You were so scared on the roller coaster, but you held my hand the whole time.",
+      "dialogue": "You: If I fall, I'm taking you with me!\nMe: Deal.",
+      "soundtrack": "Perfect - Ed Sheeran"
+    }
+  ],
+  "artStyle": "anime",
+  "puzzles": [
+    {
+      "type": "trivia",
+      "question": "What book were we both reaching for?",
+      "answer": "The Little Prince",
+      "hint": "It's about a boy from an asteroid."
+    },
+    {
+      "type": "password",
+      "question": "What is our anniversary date?",
+      "answer": "0520",
+      "hint": "May 20th"
+    }
+  ],
+  "bgm": "romantic-piano",
+  "loveLetter": "Dear Alice,\n\nSince that day at the library, my life has been so much brighter.\n\nI hope you enjoy this little game I made for you.\n\nLove,\nBob"
+}

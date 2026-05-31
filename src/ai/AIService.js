@@ -34,12 +34,9 @@ export class AIService {
   async generateScene(memory, artStyle, characters, sceneIndex, totalScenes) {
     const isEn = getLocale() === 'en';
 
-    let styleStr = '';
-    if (isEn) {
-      styleStr = artStyle === 'watercolor' ? 'Warm Watercolor Storybook' : artStyle === 'anime' ? 'Beautiful Anime (Makoto Shinkai)' : 'Retro Miniature Diorama';
-    } else {
-      styleStr = artStyle === 'watercolor' ? '温馨水彩绘本' : artStyle === 'anime' ? '唯美日系新海诚' : '复古微缩模型';
-    }
+    const styleStr = isEn
+      ? 'Romantic Manga Diary: soft pastel slice-of-life graphic novel illustration, light and affectionate'
+      : '浪漫漫画日记风：轻柔粉彩、生活感图像小说插画、明亮而深情';
 
     const systemPromptZh = `你是一个浪漫解谜游戏的创意总监。你需要根据用户提供的真实记忆细节，生成一个游戏关卡的完整配置。
 
@@ -81,7 +78,9 @@ export class AIService {
 4. 如果有日期相关信息，可以设计成密码锁（用日期数字）
 5. 文字风格要温柔、有诗意，避免过于直白
 6. 记忆碎片文字要让玩家（接收者）感动
-7. 必须严格返回有效的 JSON 格式`;
+7. 场景描述必须适合生成明亮、轻柔、漫画日记式的恋爱插画，避免阴暗、惊悚、霓虹或过度电影化效果
+8. 热点名称应对应画面中容易辨认且适合点击的真实物件
+9. 必须严格返回有效的 JSON 格式`;
 
     const systemPromptEn = `You are the creative director of a romantic puzzle game. You need to generate a complete level configuration based on real memories provided by the user.
 
@@ -123,7 +122,9 @@ Rules:
 4. If there is a date, prioritize 'password' lock (using digits).
 5. Tone must be gentle, poetic, and emotional.
 6. The memory_shard_text must move the player (receiver).
-7. Must strictly return valid JSON format.`;
+7. The scene description must support a light, tender, manga-diary love-story illustration; avoid dark, frightening, neon, or excessively dramatic imagery.
+8. Hotspot titles should be recognizable physical objects that can be visibly placed in the illustration.
+9. Must strictly return valid JSON format.`;
 
     const userContent = this._buildMemoryPrompt(memory, isEn);
     const messages = [

@@ -6,11 +6,16 @@ export class LevelScene extends Phaser.Scene {
   constructor() {
     super({ key: 'LevelScene' });
     this.sceneAudio = null;
+    this.sceneMusicVolume = 0.35;
     this.musicPrompt = null;
     this.viewedInteractives = new Set();
     this.hotspotRefs = [];
     this.levelCompleteText = null;
     this.shardTextObj = null;
+    this.currentLevel = null;
+    this.jigsawPieces = [];
+    this.jigsawPlacedCount = 0;
+    this.jigsawSolved = false;
   }
 
   init(data) {
@@ -19,6 +24,10 @@ export class LevelScene extends Phaser.Scene {
     this.hotspotRefs = [];
     this.levelCompleteText = null;
     this.shardTextObj = null;
+    this.currentLevel = null;
+    this.jigsawPieces = [];
+    this.jigsawPlacedCount = 0;
+    this.jigsawSolved = false;
   }
 
   create() {
@@ -33,18 +42,27 @@ export class LevelScene extends Phaser.Scene {
     }
 
     const level = levels[this.levelIndex];
+    this.currentLevel = level;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopSceneMusic());
     this.cameras.main.fadeIn(800, 10, 14, 39);
 
-    // Draw procedural background based on art style
-    this.drawBackground(config.meta.artStyle, level, width, height);
-    this.drawMemoryPhoto(level, width, height);
+    if (this.isJigsawLevel(level)) {
+      this.drawJigsawBackground(width, height);
+    } else {
+      // Draw procedural background based on art style
+      this.drawBackground(config.meta.artStyle, level, width, height);
+      this.drawMemoryPhoto(level, width, height);
+    }
 
     // Level title overlay (briefly shown)
     this.showLevelTitle(level, width, height);
 
-    // Place interactive items
-    this.placeInteractives(level, width, height);
+    if (this.isJigsawLevel(level)) {
+      this.createJigsawChallenge(level, width, height);
+    } else {
+      // Place interactive items
+      this.placeInteractives(level, width, height);
+    }
 
     // HUD - top bar
     this.createHUD(level, levels.length, width);
@@ -63,7 +81,7 @@ export class LevelScene extends Phaser.Scene {
     this.stopSceneMusic();
     const audio = new Audio(music.url);
     audio.loop = true;
-    audio.volume = 0.35;
+    audio.volume = this.sceneMusicVolume;
     this.sceneAudio = audio;
 
     audio.play().catch(() => {
@@ -106,21 +124,28 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
+  setNarrationDucking(active) {
+    if (!this.sceneAudio) return;
+    this.sceneAudio.volume = active ? 0.06 : this.sceneMusicVolume;
+  }
+
   drawMemoryPhoto(level, w, h) {
     const textureKey = `memory-photo-${this.levelIndex}`;
     if (!this.textures.exists(textureKey)) return;
 
-    const photo = this.add.image(w / 2, h / 2, textureKey).setAlpha(0.38);
+    const isGeneratedArtwork = level.artwork?.status === 'generated';
+    const photo = this.add.image(w / 2, h / 2, textureKey).setAlpha(isGeneratedArtwork ? 0.96 : 0.38);
     const scale = Math.max(w / photo.width, h / photo.height);
     photo.setScale(scale);
 
-    this.add.rectangle(w / 2, h / 2, w, h, 0xfff4ed, 0.2);
+    this.add.rectangle(w / 2, h / 2, w, h, 0xfff4ed, isGeneratedArtwork ? 0.08 : 0.2);
   }
 
   drawBackground(artStyle, level, w, h) {
     const gfx = this.add.graphics();
     
     switch (artStyle) {
+      case 'romantic-manga':
       case 'watercolor':
         this.drawWatercolorBg(gfx, level, w, h);
         break;
@@ -133,6 +158,19 @@ export class LevelScene extends Phaser.Scene {
       default:
         this.drawWatercolorBg(gfx, level, w, h);
     }
+  }
+
+  drawJigsawBackground(w, h) {
+    const gfx = this.add.graphics();
+    gfx.fillGradientStyle(0xfffaf6, 0xfff4ed, 0xffeee9, 0xffe8e6, 1, 1, 1, 1);
+    gfx.fillRect(0, 0, w, h);
+
+    gfx.fillStyle(GAME_THEME.int.blush, 0.18);
+    gfx.fillCircle(w * 0.18, h * 0.22, Math.min(w, h) * 0.22);
+    gfx.fillStyle(GAME_THEME.int.peach, 0.12);
+    gfx.fillCircle(w * 0.84, h * 0.34, Math.min(w, h) * 0.26);
+    gfx.fillStyle(0xeaf6ef, 0.2);
+    gfx.fillCircle(w * 0.52, h * 0.88, Math.min(w, h) * 0.24);
   }
 
   drawWatercolorBg(gfx, level, w, h) {
@@ -407,6 +445,306 @@ export class LevelScene extends Phaser.Scene {
     });
   }
 
+  isJigsawLevel(level) {
+    return level?.challenge?.type === 'jigsaw';
+  }
+
+  getJigsawPieceTotal(level) {
+    const rows = Math.max(1, Number(level?.challenge?.rows) || 3);
+    const cols = Math.max(1, Number(level?.challenge?.cols) || 3);
+    return Math.min(9, rows * cols);
+  }
+
+  createJigsawChallenge(level, w, h) {
+    const rows = 3;
+    const cols = 3;
+    const textureKey = this.ensureJigsawTexture(level, w, h);
+    const texture = this.textures.get(textureKey);
+    const source = texture.getSourceImage();
+    const sourceW = source?.width || 1536;
+    const sourceH = source?.height || 864;
+    const cropSize = Math.min(sourceW, sourceH);
+    const cropOffsetX = (sourceW - cropSize) / 2;
+    const cropOffsetY = (sourceH - cropSize) / 2;
+    const aspect = 1;
+
+    const trayH = Math.min(152, Math.max(124, h * 0.24));
+    const trayTop = h - trayH - 8;
+    const maxBoardW = Math.min(w * 0.86, 980);
+    const maxBoardH = Math.max(180, trayTop - 112);
+    let boardW = maxBoardW;
+    let boardH = boardW / aspect;
+    if (boardH > maxBoardH) {
+      boardH = maxBoardH;
+      boardW = boardH * aspect;
+    }
+
+    const boardX = (w - boardW) / 2;
+    const boardY = Math.max(100, 96 + (maxBoardH - boardH) / 2);
+    const pieceW = boardW / cols;
+    const pieceH = boardH / rows;
+    const cropW = cropSize / cols;
+    const cropH = cropSize / rows;
+    const snapDistance = Math.max(26, Math.min(pieceW, pieceH) * 0.22);
+
+    const prompt = level.challenge?.prompt || t('game.jigsawPrompt');
+    this.add.rectangle(w / 2, 66, Math.min(w - 32, 560), 46, GAME_THEME.int.panel, 0.9)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.24);
+    this.add.text(w / 2, 58, prompt, {
+      fontFamily: '"Noto Serif SC", serif',
+      fontSize: '17px',
+      color: GAME_THEME.hex.ink,
+      fontStyle: 'bold',
+      align: 'center',
+      wordWrap: { width: Math.min(w - 64, 520) },
+    }).setOrigin(0.5);
+    this.add.text(w / 2, 80, t('game.jigsawInstruction'), {
+      fontFamily: '"Inter", sans-serif',
+      fontSize: '11px',
+      color: GAME_THEME.hex.softInk,
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.add.rectangle(w / 2 + 4, boardY + boardH / 2 + 8, boardW + 16, boardH + 16, 0x7d4150, 0.12);
+    this.add.rectangle(w / 2, boardY + boardH / 2, boardW + 14, boardH + 14, GAME_THEME.int.panel, 0.9)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.2);
+
+    const targetPositions = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = boardX + col * pieceW + pieceW / 2;
+        const y = boardY + row * pieceH + pieceH / 2;
+        targetPositions.push({ row, col, x, y });
+        this.add.rectangle(x, y, pieceW - 5, pieceH - 5, 0xfffaf6, 0.56)
+          .setStrokeStyle(1, GAME_THEME.int.accent, 0.18);
+      }
+    }
+
+    this.add.rectangle(w / 2, h - trayH / 2 - 4, w - 24, trayH, GAME_THEME.int.panel, 0.92)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.24)
+      .setDepth(15);
+    this.add.text(24, h - trayH + 10, t('game.jigsawTray'), {
+      fontFamily: '"Inter", sans-serif',
+      fontSize: '11px',
+      color: GAME_THEME.hex.softInk,
+    }).setDepth(16);
+
+    const optionGap = Math.min(8, Math.max(4, w * 0.007));
+    const trayPaddingX = 30;
+    const trayLabelH = 26;
+    const optionSize = Math.min(
+      (w - trayPaddingX * 2 - optionGap * 8) / 9,
+      trayH - trayLabelH - 20
+    );
+    const optionW = optionSize;
+    const optionH = optionSize;
+    const trayY = h - trayH + trayLabelH + optionH / 2 + 10;
+    const startX = w / 2 - ((optionW + optionGap) * 8) / 2;
+    const trayOrder = [4, 0, 6, 2, 8, 1, 7, 3, 5];
+
+    targetPositions.forEach((target, index) => {
+      const traySlot = Math.max(0, trayOrder.indexOf(index));
+      const start = {
+        x: startX + traySlot * (optionW + optionGap),
+        y: trayY,
+      };
+      const pieceTextureKey = this.createJigsawPieceTexture(
+        textureKey,
+        index,
+        cropOffsetX + target.col * cropW,
+        cropOffsetY + target.row * cropH,
+        cropW,
+        cropH
+      );
+      const piece = this.add.image(start.x, start.y, pieceTextureKey)
+        .setOrigin(0.5)
+        .setDisplaySize(optionW, optionH)
+        .setDepth(20 + index)
+        .setInteractive({ useHandCursor: true });
+
+      piece.jigsawTarget = target;
+      piece.jigsawPlaced = false;
+      piece.jigsawHome = { x: start.x, y: start.y };
+      piece.jigsawTargetSize = { width: pieceW, height: pieceH };
+      piece.jigsawOptionSize = { width: optionW, height: optionH };
+      this.input.setDraggable(piece);
+
+      const border = this.add.rectangle(piece.x, piece.y, optionW, optionH, 0xffffff, 0)
+        .setStrokeStyle(1, 0xffffff, 0.65)
+        .setDepth(piece.depth + 0.1);
+      piece.jigsawBorder = border;
+
+      piece.on('dragstart', () => {
+        if (piece.jigsawPlaced || this.jigsawSolved) return;
+        piece.setDepth(80);
+        border.setDepth(81);
+        piece.setDisplaySize(pieceW, pieceH);
+        border.setDisplaySize(pieceW, pieceH);
+        piece.setAlpha(0.96);
+      });
+
+      piece.on('drag', (pointer, dragX, dragY) => {
+        if (piece.jigsawPlaced || this.jigsawSolved) return;
+        piece.setPosition(dragX, dragY);
+        border.setPosition(dragX, dragY);
+      });
+
+      piece.on('dragend', () => {
+        if (piece.jigsawPlaced || this.jigsawSolved) return;
+        this.handleJigsawDrop(piece, border, snapDistance, level);
+      });
+
+      this.jigsawPieces.push(piece);
+    });
+  }
+
+  createJigsawPieceTexture(textureKey, pieceIndex, sx, sy, sw, sh) {
+    const pieceKey = `jigsaw-piece-${this.levelIndex}-${pieceIndex}`;
+    if (this.textures.exists(pieceKey)) return pieceKey;
+
+    const source = this.textures.get(textureKey).getSourceImage();
+    const size = 384;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, sx, sy, sw, sh, 0, 0, size, size);
+
+    // Add a subtle edge directly into the tile texture so each tray option
+    // reads as a complete square piece instead of a crop of a larger frame.
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, size - 8, size - 8);
+    ctx.strokeStyle = 'rgba(74, 35, 48, 0.22)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(8, 8, size - 16, size - 16);
+
+    this.textures.addCanvas(pieceKey, canvas);
+    return pieceKey;
+  }
+
+  ensureJigsawTexture(level, w, h) {
+    const textureKey = `memory-photo-${this.levelIndex}`;
+    if (this.textures.exists(textureKey)) return textureKey;
+
+    const fallbackKey = `jigsaw-fallback-${this.levelIndex}`;
+    if (this.textures.exists(fallbackKey)) return fallbackKey;
+
+    const texW = 1024;
+    const texH = 1024;
+    const gfx = this.make.graphics({ x: 0, y: 0, add: false });
+    gfx.fillGradientStyle(0xfffaf6, 0xffe8e6, 0xfff4ed, 0xeaf6ef, 1, 1, 1, 1);
+    gfx.fillRect(0, 0, texW, texH);
+    gfx.fillStyle(GAME_THEME.int.blush, 0.24);
+    gfx.fillCircle(texW * 0.25, texH * 0.35, 180);
+    gfx.fillStyle(GAME_THEME.int.peach, 0.18);
+    gfx.fillCircle(texW * 0.72, texH * 0.42, 220);
+    gfx.fillStyle(0xeaf6ef, 0.16);
+    gfx.fillRoundedRect(texW * 0.2, texH * 0.62, texW * 0.6, 90, 28);
+    gfx.lineStyle(8, GAME_THEME.int.accent, 0.32);
+    gfx.strokeRoundedRect(texW * 0.22, texH * 0.18, texW * 0.56, texH * 0.52, 36);
+    gfx.generateTexture(fallbackKey, texW, texH);
+    gfx.destroy();
+
+    return fallbackKey;
+  }
+
+  handleJigsawDrop(piece, border, snapDistance, level) {
+    const target = piece.jigsawTarget;
+    const distance = Phaser.Math.Distance.Between(piece.x, piece.y, target.x, target.y);
+
+    if (distance <= snapDistance) {
+      piece.jigsawPlaced = true;
+      piece.disableInteractive();
+      piece.setAlpha(1);
+      this.tweens.add({
+        targets: [piece, border],
+        x: target.x,
+        y: target.y,
+        duration: 180,
+        ease: 'Back.easeOut',
+      });
+      border.setStrokeStyle(1, GAME_THEME.int.accent, 0.42);
+      this.jigsawPlacedCount += 1;
+      this.updateJigsawProgress(level);
+
+      if (this.jigsawPlacedCount >= this.getJigsawPieceTotal(level)) {
+        this.completeJigsaw(level);
+      }
+      return;
+    }
+
+    piece.setAlpha(1);
+    piece.setDisplaySize(piece.jigsawOptionSize.width, piece.jigsawOptionSize.height);
+    border.setDisplaySize(piece.jigsawOptionSize.width, piece.jigsawOptionSize.height);
+
+    this.tweens.add({
+      targets: [piece, border],
+      x: piece.jigsawHome.x,
+      y: piece.jigsawHome.y,
+      duration: 140,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        piece.setDisplaySize(piece.jigsawOptionSize.width, piece.jigsawOptionSize.height);
+        border.setDisplaySize(piece.jigsawOptionSize.width, piece.jigsawOptionSize.height);
+      },
+    });
+  }
+
+  updateJigsawProgress(level) {
+    if (!this.shardTextObj) return;
+    this.shardTextObj.setText(t('game.jigsawProgress', {
+      current: this.jigsawPlacedCount,
+      total: this.getJigsawPieceTotal(level),
+    }));
+  }
+
+  completeJigsaw(level) {
+    if (this.jigsawSolved) return;
+    this.jigsawSolved = true;
+    this.updateJigsawProgress(level);
+
+    const { width, height } = this.cameras.main;
+    const banner = this.add.rectangle(width / 2, height - 88, 320, 46, GAME_THEME.int.panel, 0.94)
+      .setStrokeStyle(1, GAME_THEME.int.accent, 0.34)
+      .setDepth(120);
+    const label = this.add.text(width / 2, height - 88, t('game.jigsawComplete'), {
+      fontFamily: '"Noto Serif SC", serif',
+      fontSize: '16px',
+      color: GAME_THEME.hex.accent,
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(121);
+
+    this.tweens.add({
+      targets: [banner, label],
+      y: '-=8',
+      alpha: { from: 0, to: 1 },
+      duration: 420,
+      ease: 'Back.easeOut',
+    });
+
+    this.time.delayedCall(900, () => this.showMemoryCardForJigsaw(level));
+  }
+
+  showMemoryCardForJigsaw(level) {
+    this.scene.launch('MemoryCardScene', {
+      level: {
+        ...level,
+        description: level.challenge?.completionText || level.description,
+      },
+      reward: {
+        type: 'memory_shard',
+        text: level.memory_shard_text || level.challenge?.completionText || t('generate.foundShard'),
+      },
+      onDone: () => {
+        this.showLevelComplete();
+      },
+    });
+    this.scene.pause();
+  }
+
   placeInteractives(level, w, h) {
     const interactives = level.interactives || [];
 
@@ -536,7 +874,8 @@ export class LevelScene extends Phaser.Scene {
     const panel = this.add.rectangle(width / 2, height - 54, 300, 48, GAME_THEME.int.panel, 0.92)
       .setStrokeStyle(1, GAME_THEME.int.accent, 0.32)
       .setInteractive({ useHandCursor: true });
-    const label = this.add.text(width / 2, height - 54, t('game.levelComplete'), {
+    const labelText = this.isJigsawLevel(this.currentLevel) ? t('game.jigsawComplete') : t('game.levelComplete');
+    const label = this.add.text(width / 2, height - 54, labelText, {
       fontFamily: '"Noto Serif SC", serif',
       fontSize: '15px',
       color: GAME_THEME.hex.accent,
@@ -573,8 +912,12 @@ export class LevelScene extends Phaser.Scene {
     });
 
     // Memory shards
-    const totalHotspots = Math.max(1, (level.interactives || []).length);
-    const shardText = t('game.shards', { current: 0, total: totalHotspots });
+    const totalHotspots = this.isJigsawLevel(level)
+      ? this.getJigsawPieceTotal(level)
+      : Math.max(1, (level.interactives || []).length);
+    const shardText = this.isJigsawLevel(level)
+      ? t('game.jigsawProgress', { current: this.jigsawPlacedCount, total: totalHotspots })
+      : t('game.shards', { current: 0, total: totalHotspots });
     this.shardTextObj = this.add.text(w - 16, 12, shardText, {
       fontFamily: '"Inter", sans-serif',
       fontSize: '13px',

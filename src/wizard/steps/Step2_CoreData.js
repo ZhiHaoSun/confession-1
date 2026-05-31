@@ -1,8 +1,9 @@
 /**
  * Step 2 — Core Data
- * Input her name, birthday, anniversary, and puzzle answer keys.
+ * Input couple identity, portrait references, anniversary, and puzzle answer keys.
  */
 import { t } from '../../i18n/i18n.js';
+import { MediaUploader } from '../../utils/MediaUploader.js';
 
 export class Step2CoreData {
   constructor(wizard) {
@@ -40,6 +41,17 @@ export class Step2CoreData {
                 <label class="form-label">${t('core.nickname')}</label>
                 <input class="form-input" id="nickname" type="text" placeholder="${t('core.nicknamePlaceholder')}" value="${d.nickname || ''}" />
               </div>
+            </div>
+
+            <div class="portrait-reference-section">
+              <h3>${t('core.portraitTitle')}</h3>
+              <p>${t('core.portraitDesc')}</p>
+              <div class="portrait-reference-grid">
+                ${this.renderPortraitUpload('creator', d.creatorPortraitUrl, d.creatorPortraitName, t('core.myPortrait'))}
+                ${this.renderPortraitUpload('receiver', d.receiverPortraitUrl, d.receiverPortraitName, t('core.herPortrait'))}
+              </div>
+              <p class="portrait-reference-hint">${t('core.portraitHint')}</p>
+            </div>
           </div>
 
           <div class="step-nav">
@@ -60,6 +72,8 @@ export class Step2CoreData {
       });
     });
 
+    this.bindPortraitUploads(container);
+
     container.querySelector('#btn-prev').addEventListener('click', () => this.wizard.prevStep());
     container.querySelector('#btn-next').addEventListener('click', () => {
       // Validate
@@ -68,6 +82,64 @@ export class Step2CoreData {
         return;
       }
       this.wizard.nextStep();
+    });
+  }
+
+  renderPortraitUpload(role, url, fileName, label) {
+    return `
+      <div class="portrait-reference">
+        <label class="form-label">${label}</label>
+        <div class="portrait-upload ${url ? 'has-image' : ''}" data-portrait-upload="${role}">
+          ${url ? `
+            <img src="${url}" alt="${label}" />
+            <button class="portrait-remove" type="button" data-portrait-remove="${role}" title="${t('core.removePortrait')}">✕</button>
+            <span class="portrait-file-name">${fileName || t('core.portraitUploaded')}</span>
+          ` : `
+            <span class="photo-upload-icon">📷</span>
+            <span class="photo-upload-text">${t('core.uploadPortrait')}</span>
+          `}
+          <input type="file" accept="image/*" data-portrait-file="${role}" />
+        </div>
+      </div>
+    `;
+  }
+
+  bindPortraitUploads(container) {
+    container.querySelectorAll('[data-portrait-upload]').forEach(upload => {
+      upload.addEventListener('click', event => {
+        if (event.target.closest('[data-portrait-remove]')) return;
+        upload.querySelector('input[type="file"]')?.click();
+      });
+    });
+
+    container.querySelectorAll('[data-portrait-file]').forEach(input => {
+      input.addEventListener('change', async event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const role = input.dataset.portraitFile;
+        const prefix = role === 'creator' ? 'creator' : 'receiver';
+
+        try {
+          this.showValidation(t('core.portraitUploading'));
+          const imageFile = await MediaUploader.imageFileToUploadBlob(file, 1024);
+          const upload = await MediaUploader.uploadFile(imageFile, { folder: 'memorymaze/portraits' });
+          this.wizard.updateData(`${prefix}PortraitUrl`, upload.url);
+          this.wizard.updateData(`${prefix}PortraitName`, file.name);
+          this.render(container);
+        } catch (error) {
+          this.showValidation(error.message || t('core.portraitUploadFail'));
+        }
+      });
+    });
+
+    container.querySelectorAll('[data-portrait-remove]').forEach(button => {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        const prefix = button.dataset.portraitRemove === 'creator' ? 'creator' : 'receiver';
+        this.wizard.updateData(`${prefix}PortraitUrl`, '');
+        this.wizard.updateData(`${prefix}PortraitName`, '');
+        this.render(container);
+      });
     });
   }
 

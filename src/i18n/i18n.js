@@ -4,8 +4,9 @@
  * Language preference is persisted in localStorage.
  */
 
-const STORAGE_KEY = 'memorymaze_lang';
-let currentLocale = 'zh';
+const STORAGE_KEY = 'memorymaze_lang_v2';
+const DEFAULT_LOCALE = 'en';
+let currentLocale = DEFAULT_LOCALE;
 
 // ---------------------------------------------------------------------------
 // Translations
@@ -34,6 +35,16 @@ const translations = {
       anniversary: '你们的纪念日 💕',
       nickname: '你对她的专属昵称 💫',
       nicknamePlaceholder: '例如：小兔子、宝贝...',
+      portraitTitle: '📷 角色形象参考（可选）',
+      portraitDesc: '可选上传你和她各自的一张清晰照片，AI 会在恋爱漫画场景中参考你们的外貌特征。不上传也可以正常生成游戏。',
+      myPortrait: '你的照片',
+      herPortrait: '她的照片',
+      uploadPortrait: '上传照片',
+      portraitUploaded: '照片已上传',
+      removePortrait: '移除照片',
+      portraitHint: '建议使用正脸清晰、光线自然的单人照片；跳过此项时，AI 会根据记忆内容创作角色。',
+      portraitUploading: '正在上传角色参考照片...',
+      portraitUploadFail: '角色照片上传失败，请检查 Google Cloud 配置',
       validationNames: '请至少填写你和她的名字',
     },
 
@@ -78,7 +89,9 @@ const translations = {
     // ── Step 4: Art Style ──
     artStyle: {
       title: '艺术风格',
-      subtitle: '选择一种视觉风格，让你们的记忆更加梦幻',
+      subtitle: '将真实回忆绘成轻柔明亮的恋爱漫画故事',
+      romanticMangaName: '💗 浪漫漫画日记风',
+      romanticMangaDesc: '柔和线稿与粉彩日光，像一页页温暖的青春恋爱图像小说',
       watercolorName: '🌸 温馨水彩绘本风',
       watercolorDesc: '柔和低饱和度，像翻开一本温暖的绘本，适合日常温馨回忆',
       animeName: '✨ 唯美日系新海诚风',
@@ -97,6 +110,7 @@ const translations = {
       trivia: '记忆问答',
       password: '密码锁',
       hidden: '隐藏物品',
+      jigsaw: '拼图回忆',
       triviaQuestion: '❓ 问题',
       triviaQuestionPlaceholder: '例如：你还记得借给我的第一本书吗？',
       triviaAnswer: '✅ 答案',
@@ -112,6 +126,9 @@ const translations = {
       hiddenItemPlaceholder: '例如：发光的日记本、闪烁的星星...',
       hiddenFoundLabel: '📝 找到后显示的文字',
       hiddenFoundPlaceholder: '例如：打开日记本，里面写着你们第一次约会的故事...',
+      jigsawPromptLabel: '🧩 拼图提示文案',
+      jigsawPromptPlaceholder: '例如：把这一天重新拼回完整的样子',
+      jigsawDesc: '这一幕会变成 3×3 的九宫格拖拽拼图，不会显示发光点击点；她拼对全部 9 块后即可通关。',
       herBirthday: '她的生日',
       anniversary: '纪念日',
     },
@@ -126,6 +143,15 @@ const translations = {
       videoHint: '这段视频将在她解开所有谜题后全屏播放 ✨',
       videoUploading: '正在上传告白视频到 Google Cloud...',
       videoUploadFail: '视频上传失败，请检查 Google Cloud 配置',
+      voiceTitle: '🎙️ 你的声音旁白',
+      voiceDesc: '上传一段你的语音参考素材，为谜题提示和终章情书生成温柔朗读音频。',
+      voiceUploadText: '上传你的语音录音',
+      voiceUploaded: '已上传声音参考',
+      voiceRemove: '移除',
+      voiceHint: '建议 20-60 秒、声音清晰的 MP3 / WAV / M4A。配置专属声音后会使用你的音色，否则使用温柔男声旁白。',
+      voiceToggle: '为谜题提示和最终告白信生成语音旁白',
+      voiceUploading: '正在上传声音参考到 Google Cloud...',
+      voiceUploadFail: '声音参考上传失败，请检查 Google Cloud 配置',
       bgmTitle: '🎵 背景音乐',
       romanticPiano: '浪漫钢琴曲',
       romanticPianoDesc: '温柔舒缓',
@@ -176,6 +202,28 @@ const translations = {
       uploadingCloud: '正在把迷宫配置上传到 Google Cloud...',
       uploadCloudDone: '迷宫配置已上传',
       uploadCloudFail: '云端配置上传失败，仍可下载本地 config.json',
+      narrationPreparing: '正在生成你的告白语音旁白...',
+      narrationFinale: '正在生成终章告白语音...',
+      narrationHint: '正在生成第 {n} 章提示语音...',
+      narrationUnavailable: '旁白生成不可用，游戏仍可正常游玩',
+      narrationTitle: '告白语音旁白',
+      narrationReady: '终章情书和 {count} 段提示语音已准备好，可在游戏预览中试听。',
+      narrationMissing: '尚未生成可播放的旁白音频，请重新生成后再分享链接。',
+      narrationFailed: '旁白生成失败：{error}',
+      narrationRegenerate: '重新生成语音旁白',
+      narrationWorking: '正在重新生成语音...',
+      narrationOff: '本次创作未开启语音旁白。返回终章步骤即可开启。',
+      illustrateScenes: '绘制浪漫漫画场景',
+      artworkScene: '正在绘制第 {n} 幕「{title}」...',
+      artworkUnavailable: '插画生成暂不可用，将保留原始场景背景',
+      artworkTitle: '插画记忆场景',
+      artworkDesc: '每一幕都已绘成轻柔的漫画回忆。分享前可以单独重新生成。',
+      artworkGenerated: '漫画插画已生成',
+      artworkFallback: '使用原始背景',
+      artworkEmpty: '等待插画生成',
+      artworkRegenerate: '重新生成插画',
+      artworkRegenerating: '正在重新绘制「{title}」...',
+      artworkWorking: '生成中...',
       mazeTitle: '{myName} ❤ {herName} 的记忆迷宫',
       defaultLoveLetter: '亲爱的{name}，谢谢你出现在我的生命中。每一段记忆，都是我最珍贵的宝藏。',
       he: '他',
@@ -256,6 +304,11 @@ const translations = {
       explore: '点击探索',
       collected: '已收集',
       shards: '💎 本章碎片 {current}/{total}',
+      jigsawProgress: '🧩 拼图 {current}/{total}',
+      jigsawPrompt: '把这段回忆拼回完整的样子',
+      jigsawInstruction: '拖动 9 块拼图到正确位置',
+      jigsawTray: '从这里拖动拼图块',
+      jigsawComplete: '✨ 回忆已拼合完成',
       levelComplete: '✨ 本章记忆已收集，继续下一章',
       playMusic: '♪ 播放 {title}',
       allCollected: '✨ 所有记忆碎片已收集完毕 ✨',
@@ -274,6 +327,16 @@ const translations = {
       loading: '加载中...',
       shardUnlocked: '记忆碎片已解锁',
       continueExplore: '继续探索 →',
+      rotateMobile: '横屏游玩',
+      exitRotateMobile: '退出横屏',
+      playVoiceHint: '播放语音提示',
+      stopVoiceHint: '停止语音提示',
+      playLoveLetter: '听他的告白',
+      stopLoveLetter: '停止播放',
+      tapToHearLoveLetter: '轻触按钮播放温柔朗读',
+      aiNarrationDisclosure: 'AI 生成语音旁白',
+      aiNarrationShort: 'AI 旁白',
+      narrationPlayFailed: '语音无法播放',
     },
 
     // ── Language Switcher ──
@@ -306,6 +369,16 @@ const translations = {
       anniversary: 'Your Anniversary 💕',
       nickname: 'Your Nickname for Her 💫',
       nicknamePlaceholder: 'e.g. Bunny, Babe...',
+      portraitTitle: '📷 Character Appearance References (Optional)',
+      portraitDesc: 'Optionally upload one clear photo of each of you so AI can reflect your appearance in the romantic manga scenes. The game can be generated without them.',
+      myPortrait: 'Your photo',
+      herPortrait: 'Her photo',
+      uploadPortrait: 'Upload photo',
+      portraitUploaded: 'Photo uploaded',
+      removePortrait: 'Remove photo',
+      portraitHint: 'A clear, naturally lit solo portrait works best; when skipped, AI illustrates characters from the memory context.',
+      portraitUploading: 'Uploading character reference photo...',
+      portraitUploadFail: 'Character photo upload failed. Please check Google Cloud settings',
       validationNames: 'Please fill in at least your name and her name',
     },
 
@@ -350,7 +423,9 @@ const translations = {
     // ── Step 4: Art Style ──
     artStyle: {
       title: 'Art Style',
-      subtitle: 'Choose a visual style to make your memories more dreamlike',
+      subtitle: 'Turn your real memories into a soft, luminous manga love story',
+      romanticMangaName: '💗 Romantic Manga Diary',
+      romanticMangaDesc: 'Gentle linework and pastel daylight, like pages from a warm youthful romance graphic novel',
       watercolorName: '🌸 Warm Watercolor Storybook',
       watercolorDesc: 'Soft, low saturation — like opening a warm picture book. Perfect for cozy everyday memories',
       animeName: '✨ Beautiful Anime (Shinkai Style)',
@@ -369,6 +444,7 @@ const translations = {
       trivia: 'Memory Quiz',
       password: 'Password Lock',
       hidden: 'Hidden Object',
+      jigsaw: 'Jigsaw Memory',
       triviaQuestion: '❓ Question',
       triviaQuestionPlaceholder: 'e.g. Do you remember the first book you lent me?',
       triviaAnswer: '✅ Answer',
@@ -384,6 +460,9 @@ const translations = {
       hiddenItemPlaceholder: 'e.g. A glowing diary, twinkling stars...',
       hiddenFoundLabel: '📝 Text Shown When Found',
       hiddenFoundPlaceholder: 'e.g. You open the diary to find the story of your first date...',
+      jigsawPromptLabel: '🧩 Jigsaw prompt',
+      jigsawPromptPlaceholder: 'e.g. Put this day back together',
+      jigsawDesc: 'This scene becomes a 3×3 draggable jigsaw puzzle with no glowing hotspots. She passes the chapter after all 9 pieces are placed correctly.',
       herBirthday: 'her birthday',
       anniversary: 'anniversary',
     },
@@ -398,6 +477,15 @@ const translations = {
       videoHint: 'This video will play full-screen after she solves all puzzles ✨',
       videoUploading: 'Uploading confession video to Google Cloud...',
       videoUploadFail: 'Video upload failed. Please check Google Cloud settings',
+      voiceTitle: '🎙️ Your Voice Narration',
+      voiceDesc: 'Upload a sample of your voice to add gentle spoken audio to puzzle hints and the final letter.',
+      voiceUploadText: 'Upload your voice recording',
+      voiceUploaded: 'Voice reference uploaded',
+      voiceRemove: 'Remove',
+      voiceHint: 'Use a clear 20-60 second MP3 / WAV / M4A. A configured custom voice uses your timbre; otherwise narration uses a gentle, warm male-style built-in voice.',
+      voiceToggle: 'Generate spoken narration for puzzle hints and the final confession letter',
+      voiceUploading: 'Uploading voice reference to Google Cloud...',
+      voiceUploadFail: 'Voice reference upload failed. Please check Google Cloud settings',
       bgmTitle: '🎵 Background Music',
       romanticPiano: 'Romantic Piano',
       romanticPianoDesc: 'Gentle & soothing',
@@ -448,6 +536,28 @@ const translations = {
       uploadingCloud: 'Uploading maze configuration to Google Cloud...',
       uploadCloudDone: 'Maze configuration uploaded',
       uploadCloudFail: 'Cloud configuration upload failed, you can still download local config.json',
+      narrationPreparing: 'Generating your confession narration...',
+      narrationFinale: 'Generating final love-letter narration...',
+      narrationHint: 'Generating voice hint for chapter {n}...',
+      narrationUnavailable: 'Narration is unavailable; the game remains playable',
+      narrationTitle: 'Spoken Confession',
+      narrationReady: 'The final letter and {count} spoken hints are ready to hear in the game preview.',
+      narrationMissing: 'No playable narration audio was generated yet. Regenerate it before sharing.',
+      narrationFailed: 'Narration generation failed: {error}',
+      narrationRegenerate: 'Regenerate narration',
+      narrationWorking: 'Regenerating voice audio...',
+      narrationOff: 'Voice narration is off for this creation. Return to the finale step to enable it.',
+      illustrateScenes: 'Illustrating romantic manga scenes',
+      artworkScene: 'Illustrating scene {n}, "{title}"...',
+      artworkUnavailable: 'Illustration generation is unavailable; keeping the original scene background',
+      artworkTitle: 'Illustrated Memories',
+      artworkDesc: 'Each moment is painted as a gentle manga memory. Regenerate any scene before sharing.',
+      artworkGenerated: 'Manga illustration ready',
+      artworkFallback: 'Using original background',
+      artworkEmpty: 'Awaiting illustration',
+      artworkRegenerate: 'Regenerate artwork',
+      artworkRegenerating: 'Redrawing "{title}"...',
+      artworkWorking: 'Generating...',
       mazeTitle: "{myName} ❤ {herName}'s Memory Maze",
       defaultLoveLetter: "Dear {name}, thank you for being in my life. Every memory with you is my most precious treasure.",
       he: 'He',
@@ -528,6 +638,11 @@ const translations = {
       explore: 'Click to explore',
       collected: 'Collected',
       shards: '💎 Shards {current}/{total}',
+      jigsawProgress: '🧩 Puzzle {current}/{total}',
+      jigsawPrompt: 'Put this memory back together',
+      jigsawInstruction: 'Drag all 9 pieces into the right places',
+      jigsawTray: 'Drag pieces from here',
+      jigsawComplete: '✨ Memory reassembled',
       levelComplete: '✨ All memories collected, continue to next chapter',
       playMusic: '♪ Play {title}',
       allCollected: '✨ All memory shards have been collected ✨',
@@ -546,6 +661,16 @@ const translations = {
       loading: 'Loading...',
       shardUnlocked: 'Memory Shard Unlocked',
       continueExplore: 'Continue Exploring →',
+      rotateMobile: 'Play Landscape',
+      exitRotateMobile: 'Exit Landscape',
+      playVoiceHint: 'Play voice hint',
+      stopVoiceHint: 'Stop voice hint',
+      playLoveLetter: 'Hear his confession',
+      stopLoveLetter: 'Stop playback',
+      tapToHearLoveLetter: 'Tap the button to hear the letter',
+      aiNarrationDisclosure: 'AI-generated voice narration',
+      aiNarrationShort: 'AI narration',
+      narrationPlayFailed: 'Unable to play voice',
     },
 
     // ── Language Switcher ──
@@ -564,12 +689,14 @@ const translations = {
  * Initialize locale from localStorage or browser preference.
  */
 export function initLocale() {
+  currentLocale = DEFAULT_LOCALE;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && translations[saved]) {
       currentLocale = saved;
     }
   } catch { /* ignore */ }
+  syncDocumentLanguage();
 }
 
 /**
@@ -589,7 +716,13 @@ export function setLocale(lang) {
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch { /* ignore */ }
+    syncDocumentLanguage();
   }
+}
+
+function syncDocumentLanguage() {
+  if (typeof document === 'undefined') return;
+  document.documentElement.lang = currentLocale === 'zh' ? 'zh-CN' : 'en';
 }
 
 /**

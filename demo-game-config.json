@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "title": "Bob ❤ Alice's Memory Maze",
+    "createdAt": "2026-05-18",
+    "artStyle": "anime",
+    "version": "1.0.0"
+  },
+  "characters": {
+    "creator": {
+      "name": "Bob"
+    },
+    "receiver": {
+      "name": "Alice"
+    }
+  },
+  "puzzleKeys": {
+    "birthday": "1108",
+    "anniversary": "0520"
+  },
+  "levels": [
+    {
+      "id": 1,
+      "title": "First Meeting · Library",
+      "background": "",
+      "description": "Remember that afternoon? Sunlight poured through the large library windows, and you were looking down at a book. That was the first time I saw you, Alice.",
+      "date": "2024-09-15",
+      "interactives": [
+        {
+          "type": "trivia",
+          "icon": "📖",
+          "position": {
+            "x": 0.65,
+            "y": 0.45
+          },
+          "puzzle": {
+            "type": "trivia",
+            "question": "Do you remember the name of the first book I lent you that day?",
+            "answer": "The Little Prince",
+            "hint": "A little boy living on a very small planet..."
+          },
+          "reward": {
+            "type": "memory_shard",
+            "text": "✨ You found the first memory fragment!"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Date · Amusement Park",
+      "background": "",
+      "description": "Our first date was at the amusement park. You said you were afraid of heights, but you rode the Ferris wheel with me anyway. At the top, the whole city's lights twinkled in your eyes.",
+      "date": "2024-11-20",
+      "interactives": [
+        {
+          "type": "password",
+          "icon": "🔐",
+          "position": {
+            "x": 0.45,
+            "y": 0.5
+          },
+          "puzzle": {
+            "type": "password",
+            "question": "Enter our anniversary password",
+            "answer": "0520",
+            "hint": "That special day we got together..."
+          },
+          "reward": {
+            "type": "memory_shard",
+            "text": "✨ Another memory fragment awakened!"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Everyday · Our Kitchen",
+      "background": "",
+      "description": "The first time you cooked for me, the eggs were burnt and the noodles were soggy, but it was the best meal I've ever had. Because it was full of your heart.",
+      "date": "2025-05-20",
+      "interactives": [
+        {
+          "type": "hidden",
+          "icon": "🔍",
+          "position": {
+            "x": 0.35,
+            "y": 0.55
+          },
+          "puzzle": {
+            "type": "hidden",
+            "question": "Find the glowing diary hidden in the scene",
+            "answer": "You open the diary and find a note you wrote: \"Made you breakfast today, hope you like it ❤️\"",
+            "hint": "Look closely in the corners to see if anything is sparkling..."
+          },
+          "reward": {
+            "type": "memory_shard",
+            "text": "✨ The final memory fragment! All memories are fully assembled!"
+          }
+        }
+      ]
+    }
+  ],
+  "finale": {
+    "hasVideo": false,
+    "videoUrl": "",
+    "loveLetter": "Dear Alice,\n\nFrom the very first moment in the library, I knew there was something special about you.\n\nThank you for every smile, every burnt breakfast, and every late night conversation.\n\nI love you.",
+    "bgm": "romantic-piano"
+  }
+}

@@ -46,7 +46,7 @@ function getDemoConfig() {
     meta: {
       title: t('generate.mazeTitle', { myName, herName: name }),
       createdAt: '2026-05-08',
-      artStyle: 'anime',
+      artStyle: 'romantic-manga',
       version: '1.0.0',
     },
     characters: {
@@ -135,6 +135,11 @@ async function bootGame() {
     width: 960,
     height: 540,
     backgroundColor: GAME_THEME.hex.pageBg,
+    // Music and spoken narration are played through HTMLAudioElement controls.
+    // Avoid creating an unused Web Audio context that browsers block on load.
+    audio: {
+      noAudio: true,
+    },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -154,6 +159,9 @@ function setupMobileRotation(game) {
   const exitBtn = document.getElementById('exit-rotate-btn');
   const container = document.getElementById('game-container');
   if (!rotateBtn || !exitBtn || !container) return;
+
+  rotateBtn.textContent = t('game.rotateMobile');
+  exitBtn.textContent = t('game.exitRotateMobile');
 
   const refreshScale = () => {
     window.setTimeout(() => {

@@ -87,6 +87,10 @@ export class Step5Puzzles {
             <span class="puzzle-type-icon">🔍</span>
             ${t('puzzles.hidden')}
           </button>
+          <button class="puzzle-type-btn ${puzzle.type === 'jigsaw' ? 'active' : ''}" data-idx="${index}" data-type="jigsaw">
+            <span class="puzzle-type-icon">🧩</span>
+            ${t('puzzles.jigsaw')}
+          </button>
         </div>
 
         <div class="puzzle-config" id="puzzle-config-${index}">
@@ -173,6 +177,17 @@ export class Step5Puzzles {
             <label class="form-label">${t('puzzles.hiddenFoundLabel')}</label>
             <textarea class="form-input form-textarea" placeholder="${t('puzzles.hiddenFoundPlaceholder')}"
                       data-cidx="${index}" data-cfield="answer" style="height: 80px;">${puzzle.answer || ''}</textarea>
+          </div>
+        `;
+      case 'jigsaw':
+        return `
+          <div class="form-group mt-md">
+            <label class="form-label">${t('puzzles.jigsawPromptLabel')}</label>
+            <input class="form-input" placeholder="${t('puzzles.jigsawPromptPlaceholder')}"
+                   value="${puzzle.question || ''}" data-cidx="${index}" data-cfield="question" />
+            <div style="margin-top: var(--space-sm); font-size: 0.8rem; color: var(--text-muted);">
+              ${t('puzzles.jigsawDesc')}
+            </div>
           </div>
         `;
       default:

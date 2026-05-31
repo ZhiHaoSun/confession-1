@@ -3,6 +3,8 @@
  * Generates config.json with real AI progress, and provides game preview + download.
  */
 import { ConfigGenerator } from '../../ai/ConfigGenerator.js';
+import { NarrationService } from '../../ai/NarrationService.js';
+import { SceneArtworkService } from '../../ai/SceneArtworkService.js';
 import { t } from '../../i18n/i18n.js';
 import { MediaUploader } from '../../utils/MediaUploader.js';
 
@@ -76,6 +78,15 @@ export class Step7Generate {
       `);
     }
 
+    if (!this.wizard.data.editMode) {
+      items.push(`
+        <div class="ai-progress-item" id="progress-artwork">
+          <div class="ai-progress-icon">🖼️</div>
+          <span>${t('generate.illustrateScenes')}</span>
+        </div>
+      `);
+    }
+
     items.push(`
       <div class="ai-progress-item" id="progress-finalize">
         <div class="ai-progress-icon">✨</div>
@@ -129,6 +140,23 @@ export class Step7Generate {
     try {
       const generator = new ConfigGenerator();
       this.configData = await generator.generate(this.wizard.data, onProgress);
+      if (!this.wizard.data.editMode) {
+        const artworkEl = document.getElementById('progress-artwork');
+        if (artworkEl) artworkEl.className = 'ai-progress-item active';
+        await SceneArtworkService.attachArtwork(this.configData, (message) => {
+          if (statusEl) statusEl.textContent = message;
+        });
+        if (artworkEl) {
+          artworkEl.className = 'ai-progress-item done';
+          artworkEl.querySelector('.ai-progress-icon').textContent = '✓';
+        }
+      }
+      if (this.wizard.data.voiceNarrationEnabled) {
+        if (statusEl) statusEl.textContent = t('generate.narrationPreparing');
+        await NarrationService.attachNarration(this.configData, this.wizard.data, (message) => {
+          if (statusEl) statusEl.textContent = message;
+        });
+      }
       await this.attachAndUploadMazeConfig(this.configData, (message) => {
         if (statusEl) statusEl.textContent = message;
       });
@@ -226,6 +254,8 @@ export class Step7Generate {
         </div>
       </div>
     ` : '';
+    const artworkGallery = this.renderArtworkGallery();
+    const narrationSummary = this.renderNarrationSummary();
 
     container.innerHTML = `
       <div class="step-container">
@@ -239,6 +269,8 @@ export class Step7Generate {
           </p>
           ${saveWarning}
           ${cloudShare}
+          ${artworkGallery}
+          ${narrationSummary}
 
           <!-- Preview -->
           <div class="preview-frame animate-fadeInScale delay-3">
@@ -287,6 +319,17 @@ export class Step7Generate {
       } catch { /* ignore */ }
     });
 
+    container.querySelectorAll('[data-regenerate-artwork]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const index = Number(button.dataset.regenerateArtwork);
+        await this.regenerateArtwork(index, button, container);
+      });
+    });
+
+    container.querySelector('#btn-regenerate-narration')?.addEventListener('click', async (event) => {
+      await this.regenerateNarration(event.currentTarget, container);
+    });
+
     container.querySelector('#btn-restart')?.addEventListener('click', () => {
       this.wizard.resetData();
       this.generated = false;
@@ -304,6 +347,129 @@ export class Step7Generate {
         this.showInlineStorageError(container);
       }
     });
+  }
+
+  renderArtworkGallery() {
+    const levels = this.configData?.levels || [];
+    if (levels.length === 0) return '';
+
+    const scenes = levels.map((level, index) => {
+      const artwork = level.artwork || {};
+      const imageUrl = artwork.url || level.background || '';
+      const statusClass = artwork.status === 'generated' ? 'generated' : 'fallback';
+      const statusText = artwork.status === 'generated'
+        ? t('generate.artworkGenerated')
+        : t('generate.artworkFallback');
+      return `
+        <article class="artwork-scene-card">
+          <div class="artwork-scene-image">
+            ${imageUrl
+              ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(level.title || t('puzzles.sceneDefault'))}" />`
+              : `<div class="artwork-empty">${t('generate.artworkEmpty')}</div>`}
+          </div>
+          <div class="artwork-scene-info">
+            <strong>${this.escapeHtml(level.title || `${t('puzzles.sceneDefault')} ${index + 1}`)}</strong>
+            <span class="artwork-status ${statusClass}">${statusText}</span>
+          </div>
+          <button class="btn btn-secondary btn-sm artwork-regenerate" type="button" data-regenerate-artwork="${index}">
+            ${t('generate.artworkRegenerate')}
+          </button>
+        </article>
+      `;
+    }).join('');
+
+    return `
+      <section class="glass-card artwork-gallery mt-lg">
+        <div class="artwork-gallery-head">
+          <h3>${t('generate.artworkTitle')}</h3>
+          <p>${t('generate.artworkDesc')}</p>
+        </div>
+        <div class="artwork-scenes">${scenes}</div>
+        <p class="artwork-feedback" id="artwork-feedback"></p>
+      </section>
+    `;
+  }
+
+  renderNarrationSummary() {
+    if (!this.wizard.data.voiceNarrationEnabled) {
+      return `
+        <section class="glass-card mt-lg" style="text-align: left;">
+          <h3>${t('generate.narrationTitle')}</h3>
+          <p style="margin-top: var(--space-sm);">${t('generate.narrationOff')}</p>
+        </section>
+      `;
+    }
+
+    const finaleReady = !!this.configData?.finale?.narrationUrl;
+    const hintCount = (this.configData?.levels || []).reduce((count, level) => (
+      count + ((level.interactives || []).some(item => item?.puzzle?.narrationUrl) ? 1 : 0)
+    ), 0);
+    const error = this.configData?.narration?.error;
+    const status = error
+      ? t('generate.narrationFailed', { error })
+      : finaleReady
+        ? t('generate.narrationReady', { count: hintCount })
+        : t('generate.narrationMissing');
+
+    return `
+      <section class="glass-card mt-lg" style="text-align: left;">
+        <h3>${t('generate.narrationTitle')}</h3>
+        <p id="narration-feedback" style="margin-top: var(--space-sm);">${this.escapeHtml(status)}</p>
+        <button class="btn btn-secondary btn-sm mt-lg" type="button" id="btn-regenerate-narration">
+          ${t('generate.narrationRegenerate')}
+        </button>
+      </section>
+    `;
+  }
+
+  async regenerateNarration(button, container) {
+    const feedback = container.querySelector('#narration-feedback');
+    button.disabled = true;
+    button.textContent = t('generate.narrationWorking');
+    if (this.configData.narration) delete this.configData.narration.error;
+
+    try {
+      await NarrationService.attachNarration(this.configData, {
+        ...this.wizard.data,
+        voiceNarrationEnabled: true,
+      }, (message) => {
+        if (feedback) feedback.textContent = message;
+      });
+      if (!this.configData?.finale?.narrationUrl) {
+        throw new Error(this.configData?.narration?.error || t('generate.narrationMissing'));
+      }
+      await this.attachAndUploadMazeConfig(this.configData, (message) => {
+        if (feedback) feedback.textContent = message;
+      });
+      this.showResult(container);
+    } catch (error) {
+      if (feedback) feedback.textContent = t('generate.narrationFailed', {
+        error: error.message || t('generate.narrationMissing'),
+      });
+      button.disabled = false;
+      button.textContent = t('generate.narrationRegenerate');
+    }
+  }
+
+  async regenerateArtwork(index, button, container) {
+    const feedback = container.querySelector('#artwork-feedback');
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = t('generate.artworkWorking');
+
+    try {
+      await SceneArtworkService.regenerateLevel(this.configData, index, (message) => {
+        if (feedback) feedback.textContent = message;
+      });
+      await this.attachAndUploadMazeConfig(this.configData, (message) => {
+        if (feedback) feedback.textContent = message;
+      });
+      this.showResult(container);
+    } catch (error) {
+      if (feedback) feedback.textContent = error.message || t('generate.artworkUnavailable');
+      button.disabled = false;
+      button.textContent = originalText;
+    }
   }
 
   async attachAndUploadMazeConfig(config, onStatus) {

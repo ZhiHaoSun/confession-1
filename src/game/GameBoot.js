@@ -132,8 +132,8 @@ async function bootGame() {
   const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
-    width: 960,
-    height: 540,
+    width: Math.max(320, window.innerWidth || 960),
+    height: Math.max(320, window.innerHeight || 540),
     backgroundColor: GAME_THEME.hex.pageBg,
     // Music and spoken narration are played through HTMLAudioElement controls.
     // Avoid creating an unused Web Audio context that browsers block on load.
@@ -141,7 +141,9 @@ async function bootGame() {
       noAudio: true,
     },
     scale: {
-      mode: Phaser.Scale.FIT,
+      mode: Phaser.Scale.RESIZE,
+      width: '100%',
+      height: '100%',
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: [PreloadScene, MenuScene, LevelScene, PuzzleScene, MemoryCardScene, ConfessionScene],

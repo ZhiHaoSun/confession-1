@@ -11,7 +11,7 @@ gs://YOUR_BUCKET/memorymaze/configs/<mazeId>.json
 Players can open:
 
 ```text
-https://your-domain.vercel.app/game.html?id=<mazeId>
+https://traeconfessionmljh.vercel.app/game.html?id=<mazeId>
 ```
 
 The game loads the config through `/api/maze-config?id=<mazeId>`.
@@ -83,7 +83,7 @@ Example CORS config:
 ```json
 [
   {
-    "origin": ["http://127.0.0.1:5173", "https://your-domain.vercel.app"],
+    "origin": ["http://127.0.0.1:5173", "https://traeconfessionmljh.vercel.app"],
     "method": ["PUT", "GET", "HEAD"],
     "responseHeader": ["Content-Type"],
     "maxAgeSeconds": 3600

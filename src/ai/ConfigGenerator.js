@@ -457,9 +457,9 @@ export class ConfigGenerator {
     return {
       ...(existingChallenge || {}),
       type: 'jigsaw',
-      rows: 3,
-      cols: 3,
-      pieces: 9,
+      rows: 2,
+      cols: 2,
+      pieces: 4,
       source: 'background',
       prompt: puzzle.question || existingChallenge?.prompt || t('game.jigsawPrompt'),
       completionText: memory.description || existingChallenge?.completionText || t('generate.foundShard'),

@@ -64,7 +64,7 @@ function buildPrompt(body, referenceGuide) {
 
   return [
     isSquare
-      ? 'Purpose: square scene artwork for a romantic 3 by 3 draggable jigsaw memory puzzle.'
+      ? 'Purpose: square scene artwork for a romantic 2 by 2 draggable jigsaw memory puzzle.'
       : 'Purpose: landscape background for a romantic interactive memory story.',
     'Visual medium: gentle manga-inspired hand-illustrated slice-of-life graphic novel; delicate ink outlines; soft flat colors with subtle watercolor paper texture; expressive but simple characters.',
     'Mood: light, affectionate, youthful, emotionally safe, quietly nostalgic.',
@@ -77,7 +77,7 @@ function buildPrompt(body, referenceGuide) {
     'Character likeness handling: if creator or receiver portrait references are provided, use them only to guide the corresponding illustrated character appearance. Preserve recognizable facial shape, hairstyle, skin tone, glasses or distinctive visible features, and apparent build or clothing style where shown, translated softly into manga linework. Do not paste photographic faces into the illustration.',
     'Character presence: when portrait references are provided and the memory describes a shared couple moment, include the referenced couple naturally in the scene with their faces and silhouettes visible enough to feel personal. Respect the written memory if it clearly calls for only one person or an object-only setting.',
     isSquare
-      ? 'Composition: square 1:1 image for a 3 by 3 jigsaw board; keep important faces and meaningful objects away from exact tile seams where possible; all 9 tiles should feel visually useful and readable.'
+      ? 'Composition: square 1:1 image for a 2 by 2 jigsaw board; keep important faces and meaningful objects away from exact tile seams where possible; all 4 tiles should feel visually useful and readable.'
       : 'Composition: wide 16:9 scene for a mobile game canvas; clean negative space for overlays; foreground and background readable; no text embedded in the artwork.',
     'Interaction overlay rule: the game interface adds all interactive hotspots separately. Do not add UI icons, pink markers, glowing hotspot circles, pins, badges, arrows, buttons, labels, sparkles around objects, or any graphical indication that an object can be tapped.',
     'Avoid: photorealism, dark purple atmosphere, horror or suspense mood, harsh shadows, overlaid writing, logos, watermarks, copied branded game imagery, or embedded interface elements.',

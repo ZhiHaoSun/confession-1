@@ -17,25 +17,25 @@
         radial-gradient(circle at 82% 78%, rgba(242, 167, 122, 0.26), transparent 36%),
         linear-gradient(135deg, #fffaf6 0%, #fff4ed 45%, #ffe8e6 100%);
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 100vw;
+      height: 100vh;
       min-height: 100vh;
       font-family: 'Noto Serif SC', serif;
       touch-action: manipulation;
     }
     #game-container {
-      width: 100%;
-      max-width: 960px;
-      aspect-ratio: 16/9;
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
       position: relative;
       transition: transform 240ms ease, width 240ms ease, height 240ms ease;
     }
     #game-container canvas {
       width: 100% !important;
       height: 100% !important;
-      border-radius: 12px;
-      box-shadow: 0 22px 70px rgba(216, 92, 114, 0.18);
+      display: block;
+      border-radius: 0;
+      box-shadow: none;
     }
     #mobile-game-controls {
       position: fixed;
@@ -64,10 +64,11 @@
 
     @media (max-width: 820px) and (orientation: portrait) {
       body {
-        padding: max(10px, env(safe-area-inset-top)) 10px max(70px, env(safe-area-inset-bottom)) 10px;
+        padding: 0;
       }
       #game-container {
-        width: 100%;
+        width: 100vw;
+        height: 100vh;
         max-width: none;
       }
       #mobile-game-controls {
@@ -80,10 +81,9 @@
         position: fixed;
         left: 50%;
         top: 50%;
-        width: min(100vh, calc(100vw * 16 / 9));
-        height: auto;
+        width: 100vh;
+        height: 100vw;
         max-width: none;
-        aspect-ratio: 16/9;
         transform: translate(-50%, -50%) rotate(90deg);
         transform-origin: center center;
       }

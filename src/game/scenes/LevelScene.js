@@ -450,14 +450,14 @@ export class LevelScene extends Phaser.Scene {
   }
 
   getJigsawPieceTotal(level) {
-    const rows = Math.max(1, Number(level?.challenge?.rows) || 3);
-    const cols = Math.max(1, Number(level?.challenge?.cols) || 3);
-    return Math.min(9, rows * cols);
+    const rows = Math.max(1, Number(level?.challenge?.rows) || 2);
+    const cols = Math.max(1, Number(level?.challenge?.cols) || 2);
+    return Math.min(4, rows * cols);
   }
 
   createJigsawChallenge(level, w, h) {
-    const rows = 3;
-    const cols = 3;
+    const rows = 2;
+    const cols = 2;
     const textureKey = this.ensureJigsawTexture(level, w, h);
     const texture = this.textures.get(textureKey);
     const source = texture.getSourceImage();
@@ -468,10 +468,18 @@ export class LevelScene extends Phaser.Scene {
     const cropOffsetY = (sourceH - cropSize) / 2;
     const aspect = 1;
 
-    const trayH = Math.min(152, Math.max(124, h * 0.24));
+    const isShortLandscape = h < 500 && w > h;
+    const promptCenterY = isShortLandscape ? 52 : 66;
+    const promptTextY = isShortLandscape ? 47 : 58;
+    const instructionY = isShortLandscape ? 69 : 80;
+    const promptH = isShortLandscape ? 38 : 46;
+    const boardTop = isShortLandscape ? 82 : 100;
+    const trayH = isShortLandscape
+      ? Math.min(128, Math.max(96, h * 0.3))
+      : Math.min(280, Math.max(178, h * 0.34));
     const trayTop = h - trayH - 8;
     const maxBoardW = Math.min(w * 0.86, 980);
-    const maxBoardH = Math.max(180, trayTop - 112);
+    const maxBoardH = Math.max(96, trayTop - boardTop - 14);
     let boardW = maxBoardW;
     let boardH = boardW / aspect;
     if (boardH > maxBoardH) {
@@ -480,7 +488,7 @@ export class LevelScene extends Phaser.Scene {
     }
 
     const boardX = (w - boardW) / 2;
-    const boardY = Math.max(100, 96 + (maxBoardH - boardH) / 2);
+    const boardY = boardTop + Math.max(0, (maxBoardH - boardH) / 2);
     const pieceW = boardW / cols;
     const pieceH = boardH / rows;
     const cropW = cropSize / cols;
@@ -488,19 +496,19 @@ export class LevelScene extends Phaser.Scene {
     const snapDistance = Math.max(26, Math.min(pieceW, pieceH) * 0.22);
 
     const prompt = level.challenge?.prompt || t('game.jigsawPrompt');
-    this.add.rectangle(w / 2, 66, Math.min(w - 32, 560), 46, GAME_THEME.int.panel, 0.9)
+    this.add.rectangle(w / 2, promptCenterY, Math.min(w - 32, 560), promptH, GAME_THEME.int.panel, 0.9)
       .setStrokeStyle(1, GAME_THEME.int.accent, 0.24);
-    this.add.text(w / 2, 58, prompt, {
+    this.add.text(w / 2, promptTextY, prompt, {
       fontFamily: '"Noto Serif SC", serif',
-      fontSize: '17px',
+      fontSize: isShortLandscape ? '14px' : '17px',
       color: GAME_THEME.hex.ink,
       fontStyle: 'bold',
       align: 'center',
       wordWrap: { width: Math.min(w - 64, 520) },
     }).setOrigin(0.5);
-    this.add.text(w / 2, 80, t('game.jigsawInstruction'), {
+    this.add.text(w / 2, instructionY, t('game.jigsawInstruction'), {
       fontFamily: '"Inter", sans-serif',
-      fontSize: '11px',
+      fontSize: isShortLandscape ? '10px' : '11px',
       color: GAME_THEME.hex.softInk,
       align: 'center',
     }).setOrigin(0.5);
@@ -529,24 +537,27 @@ export class LevelScene extends Phaser.Scene {
       color: GAME_THEME.hex.softInk,
     }).setDepth(16);
 
-    const optionGap = Math.min(8, Math.max(4, w * 0.007));
-    const trayPaddingX = 30;
-    const trayLabelH = 26;
+    const optionGap = Math.min(isShortLandscape ? 8 : 10, Math.max(4, w * 0.008));
+    const trayPaddingX = isShortLandscape ? 18 : 30;
+    const trayLabelH = isShortLandscape ? 24 : 30;
+    const traySlots = 4;
     const optionSize = Math.min(
-      (w - trayPaddingX * 2 - optionGap * 8) / 9,
-      trayH - trayLabelH - 20
+      (w - trayPaddingX * 2 - optionGap * (traySlots - 1)) / traySlots,
+      trayH - trayLabelH - 18
     );
     const optionW = optionSize;
     const optionH = optionSize;
-    const trayY = h - trayH + trayLabelH + optionH / 2 + 10;
-    const startX = w / 2 - ((optionW + optionGap) * 8) / 2;
-    const trayOrder = [4, 0, 6, 2, 8, 1, 7, 3, 5];
+    const trayGridW = optionW * traySlots + optionGap * (traySlots - 1);
+    const trayGridH = optionH;
+    const trayGridX = w / 2 - trayGridW / 2;
+    const trayGridY = h - trayH + trayLabelH + Math.max(8, (trayH - trayLabelH - trayGridH) / 2);
+    const trayOrder = [2, 0, 3, 1];
 
     targetPositions.forEach((target, index) => {
       const traySlot = Math.max(0, trayOrder.indexOf(index));
       const start = {
-        x: startX + traySlot * (optionW + optionGap),
-        y: trayY,
+        x: trayGridX + traySlot * (optionW + optionGap) + optionW / 2,
+        y: trayGridY + optionH / 2,
       };
       const pieceTextureKey = this.createJigsawPieceTexture(
         textureKey,

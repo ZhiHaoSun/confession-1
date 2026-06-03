@@ -1,9 +1,9 @@
 const DEFAULT_MODEL = 'gpt-image-2';
-const DEFAULT_QUALITY = 'medium';
-const DEFAULT_SIZE = '1536x864';
-const DEFAULT_JIGSAW_SIZE = '1024x1024';
+const DEFAULT_QUALITY = 'high';
+const DEFAULT_SIZE = '2048x1152';
+const DEFAULT_JIGSAW_SIZE = '2048x2048';
 const DEFAULT_FORMAT = 'webp';
-const DEFAULT_COMPRESSION = 82;
+const DEFAULT_COMPRESSION = 92;
 const MAX_REFERENCE_PHOTOS = 3;
 
 function json(res, status, body) {
@@ -67,6 +67,7 @@ function buildPrompt(body, referenceGuide) {
       ? 'Purpose: square scene artwork for a romantic 2 by 2 draggable jigsaw memory puzzle.'
       : 'Purpose: landscape background for a romantic interactive memory story.',
     'Visual medium: gentle manga-inspired hand-illustrated slice-of-life graphic novel; delicate ink outlines; soft flat colors with subtle watercolor paper texture; expressive but simple characters.',
+    'Rendering quality: crisp high-resolution game artwork, clean linework, readable character silhouettes and meaningful objects, detailed enough for mobile and desktop fullscreen playback.',
     'Mood: light, affectionate, youthful, emotionally safe, quietly nostalgic.',
     'Palette: warm ivory, blush pink, peach and coral, pale sky blue, soft mint accents; gentle daylight or golden-hour light.',
     `Scene: ${compact(body.sceneDescription, 1200) || details || 'A tender shared everyday memory.'}`,
@@ -88,6 +89,7 @@ function imageOptions(prompt, body = {}) {
   const size = body.imageShape === 'square'
     ? (process.env.OPENAI_IMAGE_JIGSAW_SIZE || DEFAULT_JIGSAW_SIZE)
     : (process.env.OPENAI_IMAGE_SIZE || DEFAULT_SIZE);
+  const compression = Number(process.env.OPENAI_IMAGE_OUTPUT_COMPRESSION || DEFAULT_COMPRESSION);
 
   return {
     model: process.env.OPENAI_IMAGE_MODEL || DEFAULT_MODEL,
@@ -95,7 +97,9 @@ function imageOptions(prompt, body = {}) {
     size,
     quality: process.env.OPENAI_IMAGE_QUALITY || DEFAULT_QUALITY,
     output_format: process.env.OPENAI_IMAGE_OUTPUT_FORMAT || DEFAULT_FORMAT,
-    output_compression: DEFAULT_COMPRESSION,
+    output_compression: Number.isFinite(compression)
+      ? Math.min(100, Math.max(0, compression))
+      : DEFAULT_COMPRESSION,
     moderation: 'auto',
   };
 }

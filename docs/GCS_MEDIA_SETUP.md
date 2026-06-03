@@ -34,9 +34,11 @@ Set these in Vercel project settings:
 - `GCS_CONFIG_PREFIX` optional, defaults to `memorymaze/configs`
 - `OPENAI_API_KEY` server-only key used by `/api/scene-image` and `/api/narration`
 - `OPENAI_IMAGE_MODEL` optional, defaults to `gpt-image-2`
-- `OPENAI_IMAGE_QUALITY` optional, defaults to `medium`
-- `OPENAI_IMAGE_SIZE` optional, defaults to `1536x864`
+- `OPENAI_IMAGE_QUALITY` optional, defaults to `high`
+- `OPENAI_IMAGE_SIZE` optional, defaults to `2048x1152`
+- `OPENAI_IMAGE_JIGSAW_SIZE` optional, defaults to `2048x2048`
 - `OPENAI_IMAGE_OUTPUT_FORMAT` optional, defaults to `webp`
+- `OPENAI_IMAGE_OUTPUT_COMPRESSION` optional, defaults to `92`
 - `OPENAI_TTS_MODEL` optional, defaults to `gpt-4o-mini-tts`
 - `OPENAI_TTS_VOICE` optional, defaults to `cedar`
 - `OPENAI_CUSTOM_VOICE_ID` optional, an already-created custom voice ID
